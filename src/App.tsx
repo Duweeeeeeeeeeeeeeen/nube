@@ -167,7 +167,7 @@ const stripHeavyCaptureData = (capture: Capture): Capture => {
 const sanitizeLocalCapture = (capture: Capture): Capture => (
   {
     ...capture,
-    metadata: visibleCaptureTags(capture.metadata ?? []),
+    metadata: cleanCaptureMetadata(capture),
     text: capture.source === "google calendar" || capture.calendar?.provider
       ? String(capture.text ?? "").replace(/(?:^|\n)\s*Ends:\s*[^\n]+/gi, "").replace(/\s*Ends:\s*\d{4}-\d{2}-\d{2}T\S+/gi, "").trim()
       : capture.text,
@@ -471,18 +471,23 @@ const visibleCaptureTags = (tags: string[]) => {
     .slice(0, 4);
 };
 const displayCaptureTags = (capture: Pick<Capture, "metadata" | "type" | "source" | "attachments" | "place">) => {
-  const tags = visibleCaptureTags(capture.metadata ?? []);
-  if (tags.length) return tags;
-  const fallback = new Set<string>();
+  return visibleCaptureTags(capture.metadata ?? []);
+};
+const cleanCaptureMetadata = (capture: Capture) => {
   const source = capture.source.toLowerCase();
-  if (source.includes("google calendar")) fallback.add("Google Calendar");
-  if (source.includes("gmail")) fallback.add("Gmail");
-  if (source.includes("browser") || source.includes("extension")) fallback.add("Web page");
-  if (capture.place) fallback.add("Place");
-  if (capture.attachments?.length) fallback.add("Attachment");
-  if (capture.type !== "Audio") fallback.add(capture.type);
-  else fallback.add("Audio");
-  return visibleCaptureTags(Array.from(fallback));
+  const hasBrowserSource = source.includes("browser") || source.includes("extension") || Boolean(capture.external?.url);
+  const hasAttachment = Boolean(capture.attachments?.length || capture.attachmentName || capture.imageUrl);
+  const hasAudio = source.includes("voice") || Boolean(capture.attachments?.some((attachment) => attachment.mimeType.startsWith("audio/")));
+  const visible = visibleCaptureTags(capture.metadata ?? []);
+  const hasPollutedFallbackSet = visible.includes("Web page") && visible.includes("Attachment") && visible.includes("Idea");
+  return visible.filter((tag) => {
+    if (tag === "Web page" && !hasBrowserSource) return false;
+    if (tag === "Attachment" && !hasAttachment) return false;
+    if (tag === "Audio" && !hasAudio) return false;
+    if (tag === "Voice Note" && !hasAudio) return false;
+    if (tag === "Idea" && capture.type !== "Idea" && hasPollutedFallbackSet) return false;
+    return true;
+  });
 };
 const formatFileSize = (bytes?: number) => {
   if (!bytes || bytes <= 0) return "";
