@@ -470,6 +470,20 @@ const visibleCaptureTags = (tags: string[]) => {
     })
     .slice(0, 4);
 };
+const displayCaptureTags = (capture: Pick<Capture, "metadata" | "type" | "source" | "attachments" | "place">) => {
+  const tags = visibleCaptureTags(capture.metadata ?? []);
+  if (tags.length) return tags;
+  const fallback = new Set<string>();
+  const source = capture.source.toLowerCase();
+  if (source.includes("google calendar")) fallback.add("Google Calendar");
+  if (source.includes("gmail")) fallback.add("Gmail");
+  if (source.includes("browser") || source.includes("extension")) fallback.add("Web page");
+  if (capture.place) fallback.add("Place");
+  if (capture.attachments?.length) fallback.add("Attachment");
+  if (capture.type !== "Audio") fallback.add(capture.type);
+  else fallback.add("Audio");
+  return visibleCaptureTags(Array.from(fallback));
+};
 const formatFileSize = (bytes?: number) => {
   if (!bytes || bytes <= 0) return "";
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
@@ -929,7 +943,7 @@ const escapeCsvCell = (value: unknown) => `"${String(value ?? "").replace(/"/g, 
 const exportVaultCsv = (captures: Capture[]) => {
   const rows = [
     ["Title", "Type", "Priority", "Due", "Created", "Tags", "Text"],
-    ...captures.map((capture) => [capture.title, capture.type, capture.priority ?? "", capture.due ?? "", capture.createdAt, visibleCaptureTags(capture.metadata).join(", "), capture.text]),
+    ...captures.map((capture) => [capture.title, capture.type, capture.priority ?? "", capture.due ?? "", capture.createdAt, displayCaptureTags(capture).join(", "), capture.text]),
   ];
   downloadTextFile(vaultFilename("csv"), rows.map((row) => row.map(escapeCsvCell).join(",")).join("\n"), "text/csv;charset=utf-8");
 };
@@ -946,7 +960,7 @@ const exportVaultMarkdown = (captures: Capture[]) => {
       `- Type: ${capture.type}`,
       `- Priority: ${priorityLabel(capture.priority) || "No priority"}`,
       capture.due ? `- Due: ${formatDue(capture.due)}` : null,
-      visibleCaptureTags(capture.metadata).length ? `- Tags: ${visibleCaptureTags(capture.metadata).join(", ")}` : null,
+      displayCaptureTags(capture).length ? `- Tags: ${displayCaptureTags(capture).join(", ")}` : null,
       "",
       capture.text || "_No body text._",
       "",
@@ -1474,7 +1488,7 @@ function localAiReview(captures: Capture[]): AiReview {
     headline: openTasks.length ? `${openTasks.length} open tasks need attention.` : "Your inbox is calm right now.",
     focus: openTasks[0]?.title ?? captures.find((capture) => capture.starred)?.title ?? captures[0]?.title ?? "Capture anything important when it appears.",
     nextActions: openTasks.slice(0, 3).map((capture) => capture.title),
-    patterns: [`${captures.length} total captures`, `${new Set(captures.flatMap((capture) => visibleCaptureTags(capture.metadata))).size} active tags`, `${money.length} money signals`],
+    patterns: [`${captures.length} total captures`, `${new Set(captures.flatMap((capture) => displayCaptureTags(capture))).size} active tags`, `${money.length} money signals`],
     risks: money.some((signal) => signal.direction === "review") ? ["Review unclear money items before they get buried."] : [],
     provider: "local-fallback",
   };
@@ -2343,7 +2357,7 @@ function InboxView() {
       window.removeEventListener("online", online);
     };
   }, [processUploadQueue]);
-  const allTags = Array.from(new Set([...presetTags, ...captures.flatMap((capture) => visibleCaptureTags(capture.metadata))])).sort((a, b) => a.localeCompare(b));
+  const allTags = Array.from(new Set([...presetTags, ...captures.flatMap((capture) => displayCaptureTags(capture))])).sort((a, b) => a.localeCompare(b));
   const visibleSignalCaptures = captures.filter(isCaptureUnlocked);
   const moneySignals = pluginSettings.receiptScanner && pluginSettings.receiptMoneySignals ? moneySignalsFor(visibleSignalCaptures) : [];
   const moneyTotals = {
@@ -2620,7 +2634,7 @@ function InboxView() {
     const matchesDeleted = statusFilter === "Trash" ? Boolean(capture.deletedAt) : !capture.deletedAt;
     const matchesArchive = statusFilter === "Archived" ? Boolean(capture.archived) : !capture.archived;
     const matchesStatus = statusFilter === "All" || (statusFilter === "Open" && capture.type === "Actionable" && !capture.completed) || (statusFilter === "Done" && Boolean(capture.completed)) || statusFilter === "Archived" || statusFilter === "Trash";
-    return matchesDeleted && matchesArchive && matchesCollection && matchesDate && matchesType && matchesPriority && matchesStar && matchesAsset && matchesMoney && matchesStatus && (!tagFilter || visibleCaptureTags(capture.metadata).includes(tagFilter)) && (mode === "capture" || searchMatchesCapture(capture, draft));
+    return matchesDeleted && matchesArchive && matchesCollection && matchesDate && matchesType && matchesPriority && matchesStar && matchesAsset && matchesMoney && matchesStatus && (!tagFilter || displayCaptureTags(capture).includes(tagFilter)) && (mode === "capture" || searchMatchesCapture(capture, draft));
   });
   const orderedFiltered = rankCaptures(filtered);
   const taskCaptures = orderedFiltered
@@ -2950,7 +2964,7 @@ function SmartCard({ capture, onOpen }: { capture: Capture; onOpen: () => void }
         {capture.attachments?.filter((attachment) => !attachment.mimeType.startsWith("audio/")).length ? <div className="file-strip"><Archive size={16} /><span>{capture.attachments.filter((attachment) => !attachment.mimeType.startsWith("audio/")).length} attachments</span><b>Saved inside</b></div> : null}
       </>}
       <div className="card-meta compact-card-meta">
-        <TagRow tags={visibleCaptureTags(capture.metadata)} />
+        <TagRow tags={displayCaptureTags(capture)} />
         {capture.priority && <span className="priority-pill readonly-priority" style={{ "--priority-color": priorityColor(capture.priority) } as React.CSSProperties}>{priorityLabel(capture.priority)} priority</span>}
       </div>
       <div className={`card-actions ${capture.deletedAt ? "trash-actions" : ""}`}>
@@ -2974,7 +2988,7 @@ function SmartCard({ capture, onOpen }: { capture: Capture; onOpen: () => void }
 
 function TaskCard({ capture, onOpen }: { capture: Capture; onOpen: () => void }) {
   const { updateCapture, trashCapture, restoreCapture, deleteCaptureForever, tagColors, isCaptureUnlocked, unlockCapture, lockCapture } = useBrain();
-  const tags = visibleCaptureTags(capture.metadata).slice(0, 2);
+  const tags = displayCaptureTags(capture).slice(0, 2);
   const taskAudio = audioAttachmentsFor(capture);
   const taskChecklist = checklistForCapture(capture);
   const taskBody = captureBodyText(capture);
@@ -3098,7 +3112,7 @@ const taskWeekDays = [
 function DetailModal({ capture }: { capture: Capture }) {
   const { updateCapture, setCaptures, setSelectedCapture, setPreviewImage, tagColors, setTagColors, pluginSettings, privatePinHash, setView, lockCapture } = useBrain();
   const [draft, setDraft] = React.useState({ ...capture, due: toDateTimeLocal(capture.due) });
-  const [tags, setTags] = React.useState<string[]>(visibleCaptureTags(capture.metadata));
+  const [tags, setTags] = React.useState<string[]>(displayCaptureTags(capture));
   const [repeatDays, setRepeatDays] = React.useState<number[]>(capture.repeatDays ?? []);
   const [newTag, setNewTag] = React.useState("");
   const [savingDetail, setSavingDetail] = React.useState(false);
@@ -3589,7 +3603,7 @@ function BrainInsights() {
   const starred = visibleCaptures.filter((capture) => capture.starred);
   const today = visibleCaptures.filter((capture) => dateKey(new Date(capture.createdAt)) === dateKey(new Date()));
 
-  const activeTags = Array.from(new Set(visibleCaptures.flatMap((capture) => visibleCaptureTags(capture.metadata)))).slice(0, 10);
+  const activeTags = Array.from(new Set(visibleCaptures.flatMap((capture) => displayCaptureTags(capture)))).slice(0, 10);
   const categoryDistribution = collectionOrder.map((type) => ({ type, count: visibleCaptures.filter((capture) => capture.type === type).length })).filter((item) => item.count > 0).sort((a, b) => b.count - a.count).slice(0, 5);
   const totalCategoryCount = Math.max(1, categoryDistribution.reduce((sum, item) => sum + item.count, 0));
   const data = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day, index) => {
@@ -3621,7 +3635,7 @@ function TagManager() {
   const { captures, setCaptures, tagColors, setTagColors } = useBrain();
   const [newTag, setNewTag] = React.useState("");
   const [tagDrafts, setTagDrafts] = React.useState<Record<string, string>>({});
-  const tagStats = Array.from(new Set([...presetTags, ...captures.flatMap((capture) => visibleCaptureTags(capture.metadata))])).sort((a, b) => a.localeCompare(b)).map((tag) => ({ tag, count: captures.filter((capture) => visibleCaptureTags(capture.metadata).includes(tag)).length }));
+  const tagStats = Array.from(new Set([...presetTags, ...captures.flatMap((capture) => displayCaptureTags(capture))])).sort((a, b) => a.localeCompare(b)).map((tag) => ({ tag, count: captures.filter((capture) => displayCaptureTags(capture).includes(tag)).length }));
   const addTag = () => {
     const tag = newTag.trim();
     if (!tag) return;
