@@ -59,6 +59,8 @@ import {
 import { syncQueue, type SyncQueueSnapshot } from "./syncQueue";
 import "./App.css";
 
+const TRASH_RETENTION_DAYS = 15;
+
 type View = "Inbox" | "Collections" | "Settings" | "Upgrade";
 type CaptureType = "Actionable" | "Idea" | "Expense" | "Place" | "Document" | "Audio" | "Health" | "Home" | "Study" | "Work" | "Travel" | "Person" | "Journal" | "Link";
 type Priority = "Low" | "Medium" | "High";
@@ -176,11 +178,20 @@ const isBirthdayCalendarCapture = (capture: Capture) => (
   /^(buon compleanno!?|happy birthday!?)/i.test(capture.title.trim())
 );
 
+const purgeExpiredTrash = (captures: Capture[]) => {
+  const cutoff = Date.now() - TRASH_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+  return captures.filter((capture) => {
+    if (!capture.deletedAt) return true;
+    const deletedTime = new Date(capture.deletedAt).getTime();
+    return Number.isNaN(deletedTime) || deletedTime >= cutoff;
+  });
+};
+
 const readStoredCaptures = () => {
   try {
     const saved = localStorage.getItem("nube-second-brain-rebuilt");
     const captures = saved ? JSON.parse(saved) as Capture[] : initialCaptures;
-    return captures.filter((capture) => !isBirthdayCalendarCapture(capture)).map(sanitizeLocalCapture);
+    return purgeExpiredTrash(captures).filter((capture) => !isBirthdayCalendarCapture(capture)).map(sanitizeLocalCapture);
   } catch {
     localStorage.removeItem("nube-second-brain-rebuilt");
     return initialCaptures;
@@ -190,7 +201,7 @@ const readStoredCaptures = () => {
 const writeStoredCaptures = (captures: Capture[]) => {
   try {
     localStorage.removeItem("nube-second-brain-rebuilt");
-    localStorage.setItem("nube-second-brain-rebuilt", JSON.stringify(captures.filter((capture) => !isBirthdayCalendarCapture(capture)).map(maskPrivateCaptureForStorage).map(sanitizeLocalCapture).map(stripHeavyCaptureData)));
+    localStorage.setItem("nube-second-brain-rebuilt", JSON.stringify(purgeExpiredTrash(captures).filter((capture) => !isBirthdayCalendarCapture(capture)).map(maskPrivateCaptureForStorage).map(sanitizeLocalCapture).map(stripHeavyCaptureData)));
   } catch {
     localStorage.removeItem("nube-second-brain-rebuilt");
   }
@@ -2265,6 +2276,12 @@ function InboxView() {
   const storageUsedBytes = estimateStorageBytes(captures);
   const storageLimitBytes = fallbackPlanCatalog.free.storageGb * 1024 * 1024 * 1024;
   const trashCount = captures.filter((capture) => capture.deletedAt).length;
+  const emptyTrash = () => {
+    if (!trashCount) return;
+    if (!window.confirm(`Delete ${trashCount} trashed capture${trashCount === 1 ? "" : "s"} forever?`)) return;
+    setCaptures((current) => current.filter((capture) => !capture.deletedAt));
+    setCaptureStatus("Trash emptied.");
+  };
   const storagePercent = Math.min(100, Math.round(storageUsedBytes / storageLimitBytes * 100));
   const storageBarPercent = storageUsedBytes > 0 ? Math.max(1, storagePercent) : 0;
 
@@ -2679,12 +2696,14 @@ function InboxView() {
           {activeFilterCount > 0 && <button onClick={clearFilters}>Clear all</button>}
         </div>
         <div className="filter-bar-right">
-          <button className={statusFilter === "Trash" ? "active trash-shortcut" : "trash-shortcut"} onClick={() => setStatusFilter(statusFilter === "Trash" ? "All" : "Trash")} title="Open trash"><Trash2 size={16} />Trash{trashCount > 0 && <b>{trashCount}</b>}</button>
-          <button onClick={() => void importGoogleCalendarQuick()} disabled={calendarImporting}><CalendarCheck size={16} />{calendarImporting ? "Importing" : "Google Calendar"}</button>
-          <button onClick={() => inboxCalendarInput.current?.click()}><Upload size={16} />.ics</button>
+          <button className={statusFilter === "Trash" ? "active trash-shortcut icon-only" : "trash-shortcut icon-only"} onClick={() => setStatusFilter(statusFilter === "Trash" ? "All" : "Trash")} title={statusFilter === "Trash" ? "Close trash" : "Open trash"} aria-label={statusFilter === "Trash" ? "Close trash" : "Open trash"}><Trash2 size={16} />{trashCount > 0 && <b>{trashCount}</b>}</button>
+          {statusFilter === "Trash" && trashCount > 0 && <button className="icon-only danger-soft" onClick={emptyTrash} title={`Empty trash. Items also auto-delete after ${TRASH_RETENTION_DAYS} days.`} aria-label="Empty trash"><Trash2 size={16} /></button>}
+          <button className="icon-only" onClick={() => void importGoogleCalendarQuick()} disabled={calendarImporting} title={calendarImporting ? "Importing Google Calendar" : "Import Google Calendar"} aria-label={calendarImporting ? "Importing Google Calendar" : "Import Google Calendar"}><CalendarCheck size={16} /></button>
+          <button className="icon-only" onClick={() => inboxCalendarInput.current?.click()} title="Import .ics file" aria-label="Import .ics file"><Upload size={16} /></button>
           <input ref={inboxCalendarInput} className="hidden-file" type="file" accept=".ics,text/calendar" onChange={(event) => { void importCalendarFileQuick(event.target.files?.[0]); event.currentTarget.value = ""; }} />
         </div>
       </div>
+      {statusFilter === "Trash" && <div className="trash-note">Trashed captures can be restored or deleted forever. Nube clears them automatically after {TRASH_RETENTION_DAYS} days.</div>}
       {filterOpen && <div className="filter-panel">
         <OptionPicker label="Category" value={typeFilter} options={["All", ...collectionOrder]} onChange={setTypeFilter} />
         <OptionPicker label="Priority" value={priorityFilter} options={["All", "Low", "Medium", "High"]} onChange={setPriorityFilter} formatLabel={(value) => value === "Medium" ? "Med" : value} />
@@ -2852,13 +2871,13 @@ function SmartCard({ capture, onOpen }: { capture: Capture; onOpen: () => void }
         <TagRow tags={visibleCaptureTags(capture.metadata)} />
         {capture.priority && <span className="priority-pill readonly-priority" style={{ "--priority-color": priorityColor(capture.priority) } as React.CSSProperties}>{priorityLabel(capture.priority)} priority</span>}
       </div>
-      <div className="card-actions">
-        <button className={`icon-action star-action ${capture.starred ? "active" : ""}`} onClick={(e) => { e.stopPropagation(); updateCapture(capture.id, { starred: !capture.starred }); }} title={capture.starred ? "Remove star" : "Star"} aria-label={capture.starred ? "Remove star" : "Star"}><Star size={16} fill={capture.starred ? "currentColor" : "none"} /></button>
-        <button className="icon-action lock-action" onClick={(e) => { e.stopPropagation(); void lockCapture(capture); }} title="Lock" aria-label="Lock"><Lock size={16} /></button>
+      <div className={`card-actions ${capture.deletedAt ? "trash-actions" : ""}`}>
         {capture.deletedAt ? <>
           <button className="icon-action archive-action active" onClick={(e) => { e.stopPropagation(); restoreCapture(capture); }} title="Restore" aria-label="Restore"><RotateCcw size={16} /></button>
           <button className="icon-action danger-action" onClick={(e) => { e.stopPropagation(); deleteCaptureForever(capture); }} title="Delete forever" aria-label="Delete forever"><Trash2 size={16} /></button>
         </> : <>
+          <button className={`icon-action star-action ${capture.starred ? "active" : ""}`} onClick={(e) => { e.stopPropagation(); updateCapture(capture.id, { starred: !capture.starred }); }} title={capture.starred ? "Remove star" : "Star"} aria-label={capture.starred ? "Remove star" : "Star"}><Star size={16} fill={capture.starred ? "currentColor" : "none"} /></button>
+          <button className="icon-action lock-action" onClick={(e) => { e.stopPropagation(); void lockCapture(capture); }} title="Lock" aria-label="Lock"><Lock size={16} /></button>
           <button className={`icon-action archive-action ${capture.archived ? "active" : ""}`} onClick={(e) => { e.stopPropagation(); updateCapture(capture.id, { archived: !capture.archived }); }} title={capture.archived ? "Restore from archive" : "Archive"} aria-label={capture.archived ? "Restore from archive" : "Archive"}><Archive size={16} /></button>
           {capture.type === "Actionable" && !isVoiceCapture && <button className="icon-action done-action" onClick={(e) => { e.stopPropagation(); updateCapture(capture.id, { completed: !capture.completed }); }} title={capture.completed ? "Reopen" : "Mark done"} aria-label={capture.completed ? "Reopen" : "Mark done"}><CheckCircle2 size={16} /></button>}
           {capture.type === "Actionable" && !isVoiceCapture && <button className="icon-action calendar-action" onClick={(e) => { e.stopPropagation(); snooze(1); }} title="Move to tomorrow" aria-label="Move to tomorrow"><CalendarCheck size={16} /></button>}
@@ -2938,12 +2957,12 @@ function TaskCard({ capture, onOpen }: { capture: Capture; onOpen: () => void })
       <div className="task-schedule">
         <strong className={!due ? "missing" : isOverdue ? "overdue" : ""}>{dueLabel}</strong>
         <span className={!hasTimeWindow ? "missing" : ""}>{timeLabel}</span>
-        <div>
-          <button className={`icon-action star-action ${pinned ? "active" : ""}`} onClick={(event) => { event.stopPropagation(); updateCapture(capture.id, { starred: !pinned }); }} title={pinned ? "Remove star" : "Star task"} aria-label={pinned ? "Remove star" : "Star task"}><Star size={15} fill={pinned ? "currentColor" : "none"} /></button>
+        <div className={capture.deletedAt ? "trash-actions" : ""}>
           {capture.deletedAt ? <>
             <button className="icon-action archive-action active" onClick={(event) => { event.stopPropagation(); restoreCapture(capture); }} title="Restore task" aria-label="Restore task"><RotateCcw size={15} /></button>
             <button className="icon-action danger-action" onClick={(event) => { event.stopPropagation(); deleteCaptureForever(capture); }} title="Delete task forever" aria-label="Delete task forever"><Trash2 size={15} /></button>
           </> : <>
+            <button className={`icon-action star-action ${pinned ? "active" : ""}`} onClick={(event) => { event.stopPropagation(); updateCapture(capture.id, { starred: !pinned }); }} title={pinned ? "Remove star" : "Star task"} aria-label={pinned ? "Remove star" : "Star task"}><Star size={15} fill={pinned ? "currentColor" : "none"} /></button>
             <button className={`icon-action archive-action ${capture.archived ? "active" : ""}`} onClick={(event) => { event.stopPropagation(); updateCapture(capture.id, { archived: !capture.archived }); }} title={capture.archived ? "Restore from archive" : "Archive task"} aria-label={capture.archived ? "Restore from archive" : "Archive task"}><Archive size={15} /></button>
             <button className="icon-action danger-action" onClick={(event) => { event.stopPropagation(); trashCapture(capture); }} title="Move task to trash" aria-label="Move task to trash"><Trash2 size={15} /></button>
           </>}
