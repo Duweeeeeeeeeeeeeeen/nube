@@ -308,7 +308,7 @@ button:disabled { cursor: progress; opacity: .7; }
 .cards { display: grid; gap: 16px; }
 .task-list { display: grid; gap: 12px; }
 .task-card { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "check main schedule" "actions actions actions"; align-items: start; gap: 14px; padding: 16px; border-radius: 22px; background: rgba(255,255,255,.74); border: 1px solid rgba(224,231,255,.92); box-shadow: 0 16px 34px rgba(70,72,212,.045); cursor: pointer; }
-.task-card.task-audio-card { grid-template-columns: minmax(0, 1fr); grid-template-areas: "main" "actions"; gap: 14px; padding: 18px; background: linear-gradient(145deg, rgba(240,253,250,.78), rgba(255,255,255,.72)); border-color: rgba(45,212,191,.28); }
+.task-card.task-audio-card { display: flex; flex-direction: column; align-items: stretch; gap: 14px; padding: 18px; background: linear-gradient(145deg, rgba(240,253,250,.78), rgba(255,255,255,.72)); border-color: rgba(45,212,191,.28); }
 .task-card.starred { border-color: rgba(245,158,11,.36); background: linear-gradient(180deg, rgba(255,251,235,.78), rgba(255,255,255,.72)); }
 .task-card.task-audio-card.starred { background: linear-gradient(145deg, rgba(240,253,250,.76), rgba(255,251,235,.72)); }
 .task-card.completed { opacity: .62; }
@@ -318,7 +318,7 @@ button:disabled { cursor: progress; opacity: .7; }
 .task-card.completed .task-check { color: var(--primary-deep); background: rgba(224,231,255,.72); }
 .task-audio-card .task-check { align-self: center; margin-top: 0; }
 .task-main { grid-area: main; min-width: 0; display: grid; gap: 7px; }
-.task-card.task-audio-card .task-main { width: 100%; max-width: none; justify-self: stretch; }
+.task-card.task-audio-card .task-main { width: 100%; max-width: none; justify-self: stretch; align-self: stretch; }
 .task-title-row { min-width: 0; display: flex; align-items: center; gap: 10px; }
 .task-title-row h3 { min-width: 0; flex: 1 1 auto; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 17px; letter-spacing: 0; }
 .task-title-row .priority-pill { flex: 0 0 auto; min-height: 25px; padding: 6px 9px; border-radius: 999px; color: var(--priority-color); background: color-mix(in srgb, var(--priority-color) 14%, white); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--priority-color) 20%, transparent); font-size: 11px; font-weight: 900; }
@@ -355,7 +355,7 @@ button:disabled { cursor: progress; opacity: .7; }
 .task-card.task-audio-card .voice-body { flex: 0 0 100%; display: grid; grid-template-columns: minmax(0, 1fr); width: 100%; min-width: 0; max-width: none; justify-self: stretch; }
 .task-card.task-audio-card .voice-progress-rail { display: block; grid-column: 1 / -1; width: 100%; min-width: 0; max-width: none; justify-self: stretch; }
 .task-audio-card .task-missing-chip { margin-top: 2px; }
-.task-audio-card .task-actions { margin-top: 0; padding-top: 0; border-top: 0; }
+.task-audio-card .task-actions { width: 100%; align-self: stretch; margin-top: 0; padding-top: 0; border-top: 0; }
 .task-voice-player { width: 100%; display: grid; gap: 8px; }
 .task-voice-head { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: center; gap: 10px; }
 .task-voice-play { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 999px; color: white; background: var(--primary); box-shadow: 0 10px 22px rgba(99,102,241,.22); }
@@ -1543,7 +1543,7 @@ button:disabled { cursor: progress; opacity: .7; }
   .capture-list { gap: 14px; padding-bottom: 40px; }
   .task-list { gap: 10px; }
   .task-card { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "check main" "schedule schedule" "actions actions"; align-items: start; gap: 12px; padding: 14px; border-radius: 20px; }
-  .task-card.task-audio-card { grid-template-columns: minmax(0, 1fr); grid-template-areas: "main" "actions"; }
+  .task-card.task-audio-card { display: flex; flex-direction: column; align-items: stretch; }
   .task-check { width: 40px; height: 40px; }
   .task-title-row { align-items: flex-start; flex-direction: column; gap: 7px; }
   .task-title-row h3 { width: 100%; white-space: normal; line-height: 1.2; font-size: 16px; }
