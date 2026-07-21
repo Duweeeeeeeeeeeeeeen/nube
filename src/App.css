@@ -307,13 +307,13 @@ button:disabled { cursor: progress; opacity: .7; }
 .text-action { color: var(--primary-deep); background: transparent; font-size: 13px; font-weight: 800; }
 .cards { display: grid; gap: 16px; }
 .task-list { display: grid; gap: 12px; }
-.task-card { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: 14px; padding: 16px; border-radius: 22px; background: rgba(255,255,255,.74); border: 1px solid rgba(224,231,255,.92); box-shadow: 0 16px 34px rgba(70,72,212,.045); cursor: pointer; }
+.task-card { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "check main schedule" "actions actions actions"; align-items: start; gap: 14px; padding: 16px; border-radius: 22px; background: rgba(255,255,255,.74); border: 1px solid rgba(224,231,255,.92); box-shadow: 0 16px 34px rgba(70,72,212,.045); cursor: pointer; }
 .task-card.starred { border-color: rgba(245,158,11,.36); background: linear-gradient(180deg, rgba(255,251,235,.78), rgba(255,255,255,.72)); }
 .task-card.completed { opacity: .62; }
 .task-card.completed h3 { text-decoration: line-through; }
-.task-check { width: 42px; height: 42px; display: grid; place-items: center; margin-top: 4px; border-radius: 999px; color: #0f9f6e; background: rgba(209,250,229,.72); }
+.task-check { grid-area: check; width: 42px; height: 42px; display: grid; place-items: center; margin-top: 4px; border-radius: 999px; color: #0f9f6e; background: rgba(209,250,229,.72); }
 .task-card.completed .task-check { color: white; background: #0f9f6e; }
-.task-main { min-width: 0; display: grid; gap: 7px; }
+.task-main { grid-area: main; min-width: 0; display: grid; gap: 7px; }
 .task-title-row { min-width: 0; display: flex; align-items: center; gap: 10px; }
 .task-title-row h3 { min-width: 0; flex: 1 1 auto; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 17px; letter-spacing: 0; }
 .task-title-row .priority-pill { flex: 0 0 auto; min-height: 25px; padding: 6px 9px; border-radius: 999px; color: var(--priority-color); background: color-mix(in srgb, var(--priority-color) 14%, white); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--priority-color) 20%, transparent); font-size: 11px; font-weight: 900; }
@@ -341,14 +341,18 @@ button:disabled { cursor: progress; opacity: .7; }
 .task-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; min-width: 0; }
 .task-meta span, .task-meta small { min-height: 24px; display: inline-flex; align-items: center; padding: 5px 8px; border-radius: 999px; font-size: 11px; font-weight: 850; }
 .task-meta small { color: var(--muted); background: rgba(224,231,255,.42); }
-.task-schedule { min-width: 124px; display: grid; justify-items: end; gap: 4px; text-align: right; }
+.task-schedule { grid-area: schedule; min-width: 124px; display: grid; justify-items: end; gap: 4px; text-align: right; }
 .task-schedule strong { color: var(--text); font-size: 13px; white-space: nowrap; }
 .task-schedule strong.overdue { color: #dc2626; }
 .task-schedule strong.missing, .task-schedule span.missing { color: #b45309; }
 .task-schedule span { color: var(--muted); font-size: 12px; font-weight: 850; white-space: nowrap; }
 .task-schedule div { display: inline-flex; align-items: center; gap: 5px; margin-top: 4px; }
-.task-schedule button { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 999px; color: var(--primary-deep); background: rgba(224,231,255,.62); }
-.task-schedule button.active { color: #a16207; background: rgba(254,243,199,.92); }
+.task-actions { grid-area: actions; display: flex; align-items: center; gap: 8px; margin-top: 2px; padding-top: 12px; border-top: 1px solid rgba(199,196,215,.26); }
+.task-actions .icon-action { width: 34px; min-width: 34px; height: 34px; padding: 0; display: grid; place-items: center; border-radius: 999px; color: var(--action-color, var(--primary-deep)); background: var(--action-bg, rgba(224,231,255,.62)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--action-color, var(--primary)) 16%, transparent); }
+.task-actions .icon-action:hover { transform: translateY(-1px); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--action-color, var(--primary)) 22%, transparent), 0 10px 22px color-mix(in srgb, var(--action-color, var(--primary)) 13%, transparent); }
+.task-actions .danger-action { margin-left: auto; }
+.task-actions.trash-actions { justify-content: flex-end; }
+.task-actions.trash-actions .danger-action { margin-left: 0; }
 .task-planner-card { display: grid; gap: 14px; padding: 15px; border-radius: 20px; background: linear-gradient(135deg, rgba(239,246,255,.78), rgba(255,255,255,.72)); border: 1px solid rgba(191,219,254,.82); }
 .task-planner-card h3 { margin: 0 0 4px !important; }
 .task-planner-card p { margin: 0; color: var(--muted); font-size: 13px; font-weight: 720; }
@@ -485,8 +489,8 @@ button:disabled { cursor: progress; opacity: .7; }
 .suggested-action { margin-top: 14px; padding: 12px 14px; border-radius: 16px; background: rgba(99,102,241,.07); color: var(--primary-deep) !important; font-size: 14px; }
 .card-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(199,196,215,.32); }
 .card-actions button, .focus-meta button, .calendar-bundle { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 8px 11px; border-radius: 999px; color: var(--primary-deep); background: rgba(224,231,255,.62); font-size: 13px; font-weight: 800; }
-.card-actions .icon-action, .task-schedule .icon-action { width: 36px; min-width: 36px; height: 36px; padding: 0; color: var(--action-color, var(--primary-deep)); background: var(--action-bg, rgba(224,231,255,.62)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--action-color, var(--primary)) 16%, transparent); }
-.card-actions .icon-action:hover, .task-schedule .icon-action:hover { transform: translateY(-1px); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--action-color, var(--primary)) 22%, transparent), 0 10px 22px color-mix(in srgb, var(--action-color, var(--primary)) 13%, transparent); }
+.card-actions .icon-action { width: 36px; min-width: 36px; height: 36px; padding: 0; color: var(--action-color, var(--primary-deep)); background: var(--action-bg, rgba(224,231,255,.62)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--action-color, var(--primary)) 16%, transparent); }
+.card-actions .icon-action:hover { transform: translateY(-1px); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--action-color, var(--primary)) 22%, transparent), 0 10px 22px color-mix(in srgb, var(--action-color, var(--primary)) 13%, transparent); }
 .card-actions .export-action, .card-actions .danger-action { margin-left: auto; }
 .card-actions .export-action + .danger-action { margin-left: 0; }
 .card-actions.trash-actions { justify-content: flex-end; }
@@ -1499,14 +1503,14 @@ button:disabled { cursor: progress; opacity: .7; }
   .inbox-mode-toggle button { flex: 1 1 0; justify-content: center; min-width: 0; padding: 8px 8px; }
   .capture-list { gap: 14px; padding-bottom: 40px; }
   .task-list { gap: 10px; }
-  .task-card { grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 12px; padding: 14px; border-radius: 20px; }
+  .task-card { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "check main" "schedule schedule" "actions actions"; align-items: start; gap: 12px; padding: 14px; border-radius: 20px; }
   .task-check { width: 40px; height: 40px; }
   .task-title-row { align-items: flex-start; flex-direction: column; gap: 7px; }
   .task-title-row h3 { width: 100%; white-space: normal; line-height: 1.2; font-size: 16px; }
   .task-main p { -webkit-line-clamp: 2; }
-  .task-schedule { grid-column: 1 / -1; width: 100%; min-width: 0; grid-template-columns: minmax(0, 1fr) auto; align-items: center; justify-items: start; text-align: left; padding-top: 10px; border-top: 1px solid rgba(199,196,215,.26); }
+  .task-schedule { width: 100%; min-width: 0; display: flex; align-items: center; justify-content: flex-start; gap: 8px; text-align: left; }
   .task-schedule span { justify-self: start; }
-  .task-schedule div { grid-column: 2; grid-row: 1 / span 2; margin-top: 0; }
+  .task-actions { padding-top: 10px; }
   .smart-card { padding: 16px; border-radius: 22px; overflow: hidden; }
   .card-head, .place-card-head { gap: 10px; }
   .card-head div, .place-card-head div { gap: 8px; min-width: 0; }

@@ -2904,9 +2904,9 @@ function TaskCard({ capture, onOpen }: { capture: Capture; onOpen: () => void })
   const pinned = isPinnedCapture(capture);
   const locked = !isCaptureUnlocked(capture);
   const due = capture.due ? parseDueDate(capture.due) : null;
-  const dueLabel = due ? due.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }) : "No date";
+  const dueLabel = due ? due.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }) : "";
   const hasTimeWindow = Boolean(capture.taskStartTime && capture.taskEndTime);
-  const timeLabel = hasTimeWindow ? `${capture.taskStartTime}-${capture.taskEndTime}` : due ? due.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "Anytime";
+  const timeLabel = hasTimeWindow ? `${capture.taskStartTime}-${capture.taskEndTime}` : due ? due.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) : "";
   const isOverdue = Boolean(due && due.getTime() < Date.now() && !capture.completed);
   const missing = [
     !due ? "date" : null,
@@ -2959,18 +2959,18 @@ function TaskCard({ capture, onOpen }: { capture: Capture; onOpen: () => void })
         </div>
       </div>
       <div className="task-schedule">
-        <strong className={!due ? "missing" : isOverdue ? "overdue" : ""}>{dueLabel}</strong>
-        <span className={!hasTimeWindow ? "missing" : ""}>{timeLabel}</span>
-        <div className={capture.deletedAt ? "trash-actions" : ""}>
-          {capture.deletedAt ? <>
-            <button className="icon-action archive-action active" onClick={(event) => { event.stopPropagation(); restoreCapture(capture); }} title="Restore task" aria-label="Restore task"><RotateCcw size={15} /></button>
-            <button className="icon-action danger-action" onClick={(event) => { event.stopPropagation(); deleteCaptureForever(capture); }} title="Delete task forever" aria-label="Delete task forever"><Trash2 size={15} /></button>
-          </> : <>
-            <button className={`icon-action star-action ${pinned ? "active" : ""}`} onClick={(event) => { event.stopPropagation(); updateCapture(capture.id, { starred: !pinned }); }} title={pinned ? "Remove star" : "Star task"} aria-label={pinned ? "Remove star" : "Star task"}><Star size={15} fill={pinned ? "currentColor" : "none"} /></button>
-            <button className={`icon-action archive-action ${capture.archived ? "active" : ""}`} onClick={(event) => { event.stopPropagation(); updateCapture(capture.id, { archived: !capture.archived }); }} title={capture.archived ? "Restore from archive" : "Archive task"} aria-label={capture.archived ? "Restore from archive" : "Archive task"}><Archive size={15} /></button>
-            <button className="icon-action danger-action" onClick={(event) => { event.stopPropagation(); trashCapture(capture); }} title="Move task to trash" aria-label="Move task to trash"><Trash2 size={15} /></button>
-          </>}
-        </div>
+        {dueLabel && <strong className={isOverdue ? "overdue" : ""}>{dueLabel}</strong>}
+        {timeLabel && <span>{timeLabel}</span>}
+      </div>
+      <div className={`task-actions ${capture.deletedAt ? "trash-actions" : ""}`}>
+        {capture.deletedAt ? <>
+          <button className="icon-action archive-action active" onClick={(event) => { event.stopPropagation(); restoreCapture(capture); }} title="Restore task" aria-label="Restore task"><RotateCcw size={15} /></button>
+          <button className="icon-action danger-action" onClick={(event) => { event.stopPropagation(); deleteCaptureForever(capture); }} title="Delete task forever" aria-label="Delete task forever"><Trash2 size={15} /></button>
+        </> : <>
+          <button className={`icon-action star-action ${pinned ? "active" : ""}`} onClick={(event) => { event.stopPropagation(); updateCapture(capture.id, { starred: !pinned }); }} title={pinned ? "Remove star" : "Star task"} aria-label={pinned ? "Remove star" : "Star task"}><Star size={15} fill={pinned ? "currentColor" : "none"} /></button>
+          <button className={`icon-action archive-action ${capture.archived ? "active" : ""}`} onClick={(event) => { event.stopPropagation(); updateCapture(capture.id, { archived: !capture.archived }); }} title={capture.archived ? "Restore from archive" : "Archive task"} aria-label={capture.archived ? "Restore from archive" : "Archive task"}><Archive size={15} /></button>
+          <button className="icon-action danger-action" onClick={(event) => { event.stopPropagation(); trashCapture(capture); }} title="Move task to trash" aria-label="Move task to trash"><Trash2 size={15} /></button>
+        </>}
       </div>
     </motion.article>
   );
