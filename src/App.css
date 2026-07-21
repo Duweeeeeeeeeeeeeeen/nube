@@ -325,10 +325,15 @@ button:disabled { cursor: progress; opacity: .7; }
 .task-planner-card { display: grid; gap: 14px; padding: 15px; border-radius: 20px; background: linear-gradient(135deg, rgba(239,246,255,.78), rgba(255,255,255,.72)); border: 1px solid rgba(191,219,254,.82); }
 .task-planner-card h3 { margin: 0 0 4px !important; }
 .task-planner-card p { margin: 0; color: var(--muted); font-size: 13px; font-weight: 720; }
-.missing-field { position: relative; display: grid; gap: 6px; border-radius: 18px; }
-.missing-field.is-missing { padding: 8px; margin: -8px; background: linear-gradient(135deg, rgba(254,242,242,.9), rgba(255,255,255,.62)); box-shadow: inset 3px 0 0 #ef4444, inset 0 0 0 1px rgba(239,68,68,.22); }
-.missing-field small { display: flex; align-items: center; gap: 5px; color: #dc2626; font-size: 11px; font-weight: 900; letter-spacing: 0; }
-.task-time-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.missing-field { position: relative; display: grid; gap: 7px; border-radius: 18px; }
+.missing-field.is-missing { padding: 7px; margin: -7px; background: linear-gradient(135deg, rgba(255,247,237,.82), rgba(255,255,255,.58)); box-shadow: inset 0 0 0 1px rgba(251,146,60,.26); }
+.missing-field.is-missing > label,
+.missing-field.is-missing .option-picker-label,
+.missing-field.is-missing .date-picker-label,
+.missing-field.is-missing .time-picker-label { color: #9a3412; }
+.missing-field small { display: inline-flex; align-items: center; justify-self: start; gap: 5px; min-height: 22px; padding: 4px 8px; border-radius: 999px; color: #b45309; background: rgba(255,237,213,.82); font-size: 10px; font-weight: 900; letter-spacing: 0; }
+.missing-field small svg { width: 11px; height: 11px; }
+.task-time-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .task-repeat-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .task-repeat-row button { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 999px; color: var(--muted); background: rgba(224,231,255,.58); font-size: 12px; font-weight: 950; }
 .task-repeat-row button.active { color: white; background: var(--primary); box-shadow: 0 10px 20px rgba(99,102,241,.18); }

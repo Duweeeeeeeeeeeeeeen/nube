@@ -1979,7 +1979,7 @@ function OptionPicker<T extends string>({ value, options, onChange, label, forma
   const [open, setOpen] = React.useState(false);
   return (
     <div className="option-picker">
-      {label && <span>{label}</span>}
+      {label && <span className="option-picker-label">{label}</span>}
       <button className={open ? "open" : ""} onClick={() => setOpen((current) => !current)}>{formatLabel(value)}<ChevronDown size={15} /></button>
       {open && <div className="option-menu">{options.map((option) => <button key={option} className={option === value ? "selected" : ""} onClick={() => { onChange(option); setOpen(false); }}>{formatLabel(option)}</button>)}</div>}
     </div>
@@ -2050,7 +2050,7 @@ function NubeTimePicker({ label, value, onChange }: { label: string; value?: str
   const setTime = (nextHour: number, nextMinute: number) => onChange(`${formatPart(nextHour)}:${formatPart(nextMinute)}`);
   return (
     <div className="nube-time-picker">
-      <span>{label}</span>
+      <span className="time-picker-label">{label}</span>
       <button className={open ? "open" : ""} onClick={() => setOpen((current) => !current)} type="button">
         {value || "--:--"}
         <Clock3 size={15} />
@@ -3054,11 +3054,11 @@ function DetailModal({ capture }: { capture: Capture }) {
           <div className="date-priority-row">
             <div className={`missing-field ${draft.type === "Actionable" && !draft.due ? "is-missing" : ""}`}>
               <NubeDatePicker label="Date" value={draft.due ?? ""} onChange={(value) => setDraft({ ...draft, due: value })} />
-              {draft.type === "Actionable" && !draft.due && <small><AlertTriangle size={12} />Missing date</small>}
+              {draft.type === "Actionable" && !draft.due && <small><AlertTriangle size={12} />Optional date</small>}
             </div>
             <div className={`missing-field ${draft.type === "Actionable" && !draft.priority ? "is-missing" : ""}`}>
               <OptionPicker label="Priority" value={draft.priority ?? "No priority"} options={["No priority", "Low", "Medium", "High"]} onChange={(priority) => setDraft({ ...draft, priority: priority === "No priority" ? undefined : priority as Priority })} formatLabel={priorityLabel} />
-              {draft.type === "Actionable" && !draft.priority && <small><AlertTriangle size={12} />Missing priority</small>}
+              {draft.type === "Actionable" && !draft.priority && <small><AlertTriangle size={12} />Optional priority</small>}
             </div>
           </div>
         </div>
@@ -3071,11 +3071,11 @@ function DetailModal({ capture }: { capture: Capture }) {
             <div className="task-time-row">
               <div className={`missing-field ${!draft.taskStartTime ? "is-missing" : ""}`}>
                 <NubeTimePicker label="Start" value={draft.taskStartTime ?? ""} onChange={(value) => setDraft({ ...draft, taskStartTime: value })} />
-                {!draft.taskStartTime && <small><AlertTriangle size={12} />Missing start</small>}
+                {!draft.taskStartTime && <small><AlertTriangle size={12} />Optional start</small>}
               </div>
               <div className={`missing-field ${!draft.taskEndTime ? "is-missing" : ""}`}>
                 <NubeTimePicker label="End" value={draft.taskEndTime ?? ""} onChange={(value) => setDraft({ ...draft, taskEndTime: value })} />
-                {!draft.taskEndTime && <small><AlertTriangle size={12} />Missing end</small>}
+                {!draft.taskEndTime && <small><AlertTriangle size={12} />Optional end</small>}
               </div>
             </div>
             <div className="task-repeat-row" aria-label="Duplicate task on weekdays">
