@@ -2914,6 +2914,7 @@ function TaskCard({ capture, onOpen }: { capture: Capture; onOpen: () => void })
   const sourceLabel = capture.source ? capture.source.replace(/\b\w/g, (letter) => letter.toUpperCase()) : "";
   const showSourceLabel = Boolean(sourceLabel && !tags.some((tag) => tag.toLowerCase() === sourceLabel.toLowerCase()));
   const isAudioTask = taskAudio.length > 0;
+  const TaskIcon = iconForType(capture.type);
   const pinned = isPinnedCapture(capture);
   const locked = !isCaptureUnlocked(capture);
   const due = capture.due ? parseDueDate(capture.due) : null;
@@ -2950,8 +2951,8 @@ function TaskCard({ capture, onOpen }: { capture: Capture; onOpen: () => void })
   );
   return (
     <motion.article className={`task-card ${isAudioTask ? "task-audio-card" : ""} ${capture.completed ? "completed" : ""} ${pinned ? "starred" : ""}`} onClick={onOpen} whileHover={{ y: -2 }}>
-      {!isAudioTask && <button className="task-check" onClick={(event) => { event.stopPropagation(); updateCapture(capture.id, { completed: !capture.completed }); }} title={capture.completed ? "Reopen task" : "Complete task"} aria-label={capture.completed ? "Reopen task" : "Complete task"}>
-        <CheckCircle2 size={20} />
+      {!isAudioTask && <button className={`task-check ${capture.type.toLowerCase()}`} onClick={(event) => { event.stopPropagation(); onOpen(); }} title="Open task" aria-label="Open task">
+        <TaskIcon size={20} />
       </button>}
       <div className="task-main">
         {!isAudioTask && <div className="task-title-row">
