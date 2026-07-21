@@ -331,7 +331,7 @@ button:disabled { cursor: progress; opacity: .7; }
 .task-audio-list { width: 100%; max-width: min(500px, 100%); display: grid; gap: 8px; margin-top: 0; }
 .task-card.task-audio-card .task-audio-list { width: 100%; min-width: 100%; max-width: none; justify-self: stretch; }
 .task-audio-list .voice-player.compact { grid-template-columns: 36px minmax(0, 1fr); grid-template-areas: "play title" "play body"; align-items: center; column-gap: 10px; row-gap: 5px; width: 100%; min-width: 0; justify-self: stretch; margin: 0; padding: 8px 10px; border-radius: 16px; background: rgba(245,247,255,.66); border: 1px solid rgba(199,210,254,.72); box-shadow: inset 0 1px 0 rgba(255,255,255,.7); }
-.task-card.task-audio-card .voice-player.compact { grid-template-columns: 44px minmax(0, 1fr); grid-template-areas: "play title" "body body"; width: 100%; min-width: 100%; max-width: none; justify-self: stretch; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.task-card.task-audio-card .voice-player.compact { display: grid; grid-template-columns: 44px minmax(0, 1fr); grid-template-areas: "play title" "body body"; width: 100%; min-width: 100%; max-width: none; justify-self: stretch; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .task-audio-list .voice-player.compact .voice-play { width: 36px; height: 36px; }
 .task-audio-card .voice-player.compact .voice-play { width: 44px; height: 44px; }
 .task-audio-list .voice-player.compact > .voice-title-row { min-height: 24px; }
@@ -350,7 +350,8 @@ button:disabled { cursor: progress; opacity: .7; }
 .task-audio-card .voice-controls > div:first-of-type { grid-column: 2; justify-self: center; }
 .task-audio-card .voice-controls > div:last-child { grid-column: 3; justify-self: end; }
 .task-audio-card .voice-controls button { background: rgba(248,250,252,.78); }
-.task-card.task-audio-card .voice-body, .task-card.task-audio-card .voice-progress-rail { width: 100%; min-width: 100%; max-width: none; justify-self: stretch; }
+.task-card.task-audio-card .voice-body { grid-area: body; display: grid; grid-template-columns: 1fr; width: 100%; min-width: 0; max-width: none; justify-self: stretch; }
+.task-card.task-audio-card .voice-progress-rail { display: block; grid-column: 1 / -1; width: 100%; min-width: 0; max-width: none; justify-self: stretch; }
 .task-audio-card .task-missing-chip { margin-top: 2px; }
 .task-audio-card .task-actions { margin-top: 0; padding-top: 0; border-top: 0; }
 .task-missing-chip { width: fit-content; min-height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 9px; border-radius: 999px; color: #b45309; background: rgba(255,247,237,.84); box-shadow: inset 0 0 0 1px rgba(251,146,60,.28); font-size: 11px; font-weight: 900; }
