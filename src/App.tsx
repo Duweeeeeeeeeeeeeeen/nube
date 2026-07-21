@@ -481,6 +481,9 @@ const cleanCaptureMetadata = (capture: Capture) => {
   const visible = visibleCaptureTags(capture.metadata ?? []);
   const hasPollutedFallbackSet = visible.includes("Web page") && visible.includes("Attachment") && visible.includes("Idea");
   return visible.filter((tag) => {
+    if (hasPollutedFallbackSet && tag === "Web page" && !hasBrowserSource) return false;
+    if (hasPollutedFallbackSet && tag === "Attachment" && !hasAttachment) return false;
+    if (hasPollutedFallbackSet && tag === "Idea" && capture.type !== "Idea") return false;
     if (tag === "Web page" && !hasBrowserSource) return false;
     if (tag === "Attachment" && !hasAttachment) return false;
     if (tag === "Audio" && !hasAudio) return false;
@@ -1650,6 +1653,17 @@ function App() {
   const publicReviewCaptures = React.useMemo(() => captures.filter((capture) => !capture.private), [captures]);
   const aiReview = useStableAiReview(publicReviewCaptures);
 
+  React.useEffect(() => {
+    setCaptures((current) => {
+      let changed = false;
+      const cleaned = current.map((capture) => {
+        const next = sanitizeLocalCapture(capture);
+        if (next.text !== capture.text || next.metadata.join("\u0000") !== (capture.metadata ?? []).join("\u0000")) changed = true;
+        return next;
+      });
+      return changed ? cleaned : current;
+    });
+  }, []);
   React.useEffect(() => writeStoredCaptures(captures), [captures]);
   React.useEffect(() => syncQueue.subscribe(setSyncStatus), []);
   React.useEffect(() => {
@@ -3152,7 +3166,7 @@ function DetailModal({ capture }: { capture: Capture }) {
     !draft.taskStartTime || !draft.taskEndTime ? "Add a time window if you want to plan when it happens." : null,
     !draft.priority ? "Add a priority only if this needs attention before other tasks." : null,
   ].filter(Boolean) as string[] : [];
-  const existingTags = React.useMemo(() => Array.from(new Set(captures.flatMap((item) => displayCaptureTags(item))))
+  const existingTags = React.useMemo(() => Array.from(new Set([...presetTags, ...captures.flatMap((item) => displayCaptureTags(item))]))
     .sort((a, b) => a.localeCompare(b)), [captures]);
   const readAttachment = (file: File) => new Promise<Attachment>((resolve, reject) => {
     const reader = new FileReader();
