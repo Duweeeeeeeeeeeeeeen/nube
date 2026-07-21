@@ -3043,6 +3043,7 @@ function TaskCard({ capture, onOpen }: { capture: Capture; onOpen: () => void })
             />
           ))}
         </div>}
+        {isAudioTask && capture.priority && <span className="priority-pill task-audio-priority" style={{ "--priority-color": priorityColor(capture.priority) } as React.CSSProperties}>{priorityLabel(capture.priority)}</span>}
         <div className="task-meta">
           {tags.map((tag) => <span key={tag} style={tagChipStyle(tag, tagColors)}>{tag}</span>)}
           {showSourceLabel && <small>{sourceLabel}</small>}
