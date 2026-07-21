@@ -532,9 +532,9 @@ const maskPrivateCaptureForStorage = (capture: Capture): Capture => capture.priv
 }) : capture;
 const inferPriorityFromText = (text: string): Priority | undefined => {
   const lower = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  if (/\b(urgent|high priority|important|deadline|asap|urgente|importante|priorita alta|priorità alta)\b/.test(lower)) return "High";
-  if (/\b(low priority|when possible|not urgent|bassa priorita|bassa priorità|non urgente)\b/.test(lower)) return "Low";
-  if (/\b(medium priority|normal priority|priorita media|priorità media)\b/.test(lower)) return "Medium";
+  if (/\b(urgent|high priority|high|important|deadline|asap|urgente|importante|alta priorita|priorita alta|priorità alta|alta)\b/.test(lower)) return "High";
+  if (/\b(low priority|low|when possible|not urgent|bassa priorita|bassa priorità|priorita bassa|priorità bassa|non urgente|bassa)\b/.test(lower)) return "Low";
+  if (/\b(medium priority|normal priority|medium|med|priorita media|priorità media|media)\b/.test(lower)) return "Medium";
   return undefined;
 };
 const rankCaptures = (items: Capture[]) => [...items].sort((a, b) =>
@@ -648,7 +648,7 @@ const buildIntentCapture = (text: string, source: string, fallbackType: CaptureT
   }
   const timeWindow = inferTimeWindowFromText(text);
   const explicitDues = explicitDateDuesFromText(text, timeWindow.taskStartTime);
-  const hasTaskIntent = /\b(devo|ricordami|segna|todo|task|i need to|i have to)\b/.test(normalized);
+  const hasTaskIntent = /\b(devo|ricordami|segna|segnala|task|todo|da fare|i need to|i have to)\b/.test(normalized);
   const hasChecklistPayload = /:\s*[^:]+(?:,|;|\n)/.test(text) || /\bqueste sono le cose che devo fare\b/.test(normalized);
   if (hasTaskIntent && (timeWindow.taskStartTime || explicitDues.length || hasChecklistPayload)) {
     const listSource = text.includes(":") ? text.split(":").slice(1).join(":") : "";
@@ -696,7 +696,7 @@ const buildIntentCapture = (text: string, source: string, fallbackType: CaptureT
   }
   return null;
 };
-const wantsStar = (text: string) => /\b(star this|starred|top priority|pin this|important|absolute priority)\b|con la stella|metti la stella|priorita assoluta|priorità assoluta|importante/i.test(text);
+const wantsStar = (text: string) => /\b(star this|starred|star it|top priority|pin this|pinned|important|absolute priority)\b|con (?:la )?stella|metti(?:mi|la)? (?:la )?stella|stellina|priorita assoluta|priorità assoluta|importante/i.test(text);
 const weekdayIndex: Record<string, number> = {
   sunday: 0,
   domenica: 0,
@@ -2253,6 +2253,7 @@ function InboxView() {
   const displayedMoneySignals = moneyExpanded ? moneySignals : moneySignals.slice(0, 3);
   const storageUsedBytes = estimateStorageBytes(captures);
   const storageLimitBytes = fallbackPlanCatalog.free.storageGb * 1024 * 1024 * 1024;
+  const trashCount = captures.filter((capture) => capture.deletedAt).length;
   const storagePercent = Math.min(100, Math.round(storageUsedBytes / storageLimitBytes * 100));
   const storageBarPercent = storageUsedBytes > 0 ? Math.max(1, storagePercent) : 0;
 
@@ -2667,6 +2668,7 @@ function InboxView() {
           {activeFilterCount > 0 && <button onClick={clearFilters}>Clear all</button>}
         </div>
         <div className="filter-bar-right">
+          <button className={statusFilter === "Trash" ? "active trash-shortcut" : "trash-shortcut"} onClick={() => setStatusFilter(statusFilter === "Trash" ? "All" : "Trash")} title="Open trash"><Trash2 size={16} />Trash{trashCount > 0 && <b>{trashCount}</b>}</button>
           <button onClick={() => void importGoogleCalendarQuick()} disabled={calendarImporting}><CalendarCheck size={16} />{calendarImporting ? "Importing" : "Google Calendar"}</button>
           <button onClick={() => inboxCalendarInput.current?.click()}><Upload size={16} />.ics</button>
           <input ref={inboxCalendarInput} className="hidden-file" type="file" accept=".ics,text/calendar" onChange={(event) => { void importCalendarFileQuick(event.target.files?.[0]); event.currentTarget.value = ""; }} />
@@ -2677,7 +2679,7 @@ function InboxView() {
         <OptionPicker label="Priority" value={priorityFilter} options={["All", "Low", "Medium", "High"]} onChange={setPriorityFilter} formatLabel={(value) => value === "Medium" ? "Med" : value} />
         <OptionPicker label="Assets" value={assetFilter} options={["All", "Images", "Files", "Audio", "Places", "Links"]} onChange={setAssetFilter} />
         <OptionPicker label="Money" value={moneyFilter} options={["All", "Income", "Expenses"]} onChange={setMoneyFilter} />
-        <OptionPicker label="Status" value={statusFilter} options={["All", "Open", "Done", "Archived", "Trash"]} onChange={setStatusFilter} />
+        <OptionPicker label="Status" value={statusFilter === "Trash" ? "All" : statusFilter} options={["All", "Open", "Done", "Archived"]} onChange={setStatusFilter} />
         <NubeDatePicker label="Date" value={dateFilter?.day ?? ""} onChange={(value) => setDateFilter(value ? { day: value, label: new Date(`${value}T12:00:00`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }) } : null)} />
         <div className="filter-tags"><span>Tags</span><button className={!tagFilter ? "active" : ""} onClick={() => setTagFilter(null)}>All</button>{allTags.map((tag, index) => <button key={`${tag}-${index}`} className={tagFilter === tag ? "active" : ""} style={tagChipStyle(tag, tagColors)} onClick={() => setTagFilter(tagFilter === tag ? null : tag)}>{tag}</button>)}</div>
       </div>}
