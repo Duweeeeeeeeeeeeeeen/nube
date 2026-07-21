@@ -353,6 +353,7 @@ button:disabled { cursor: progress; opacity: .7; }
 .task-actions .danger-action { margin-left: auto; }
 .task-actions.trash-actions { justify-content: flex-end; }
 .task-actions.trash-actions .danger-action { margin-left: 0; }
+.trash-expiry { margin-right: auto; min-height: 28px; display: inline-flex; align-items: center; padding: 6px 10px; border-radius: 999px; color: #64748b; background: rgba(248,250,252,.78); box-shadow: inset 0 0 0 1px rgba(199,210,254,.62); font-size: 11px; font-weight: 900; }
 .task-planner-card { display: grid; gap: 14px; padding: 15px; border-radius: 20px; background: linear-gradient(135deg, rgba(239,246,255,.78), rgba(255,255,255,.72)); border: 1px solid rgba(191,219,254,.82); }
 .task-planner-card h3 { margin: 0 0 4px !important; }
 .task-planner-card p { margin: 0; color: var(--muted); font-size: 13px; font-weight: 720; }
@@ -495,7 +496,7 @@ button:disabled { cursor: progress; opacity: .7; }
 .card-actions .export-action + .danger-action { margin-left: 0; }
 .card-actions.trash-actions { justify-content: flex-end; }
 .card-actions.trash-actions .archive-action, .card-actions.trash-actions .danger-action { margin-left: 0; }
-.task-schedule .trash-actions { justify-content: flex-end; }
+.card-actions.trash-actions .trash-expiry { margin-right: auto; }
 .icon-action.star-action { --action-color: #a16207; --action-bg: rgba(254,243,199,.82); }
 .icon-action.star-action:not(.active) { --action-color: #9ca3af; --action-bg: rgba(255,255,255,.68); }
 .icon-action.lock-action { --action-color: var(--primary-deep); --action-bg: rgba(224,231,255,.72); }

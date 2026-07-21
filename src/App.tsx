@@ -187,6 +187,17 @@ const purgeExpiredTrash = (captures: Capture[]) => {
   });
 };
 
+const trashExpiryLabel = (capture: Capture) => {
+  if (!capture.deletedAt) return "";
+  const deletedTime = new Date(capture.deletedAt).getTime();
+  if (Number.isNaN(deletedTime)) return `Deletes after ${TRASH_RETENTION_DAYS} days`;
+  const expiresAt = deletedTime + TRASH_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+  const daysLeft = Math.max(0, Math.ceil((expiresAt - Date.now()) / (24 * 60 * 60 * 1000)));
+  if (daysLeft <= 0) return "Deletes today";
+  if (daysLeft === 1) return "Deletes tomorrow";
+  return `Deletes in ${daysLeft} days`;
+};
+
 const readStoredCaptures = () => {
   try {
     const saved = localStorage.getItem("nube-second-brain-rebuilt");
@@ -2876,6 +2887,7 @@ function SmartCard({ capture, onOpen }: { capture: Capture; onOpen: () => void }
       </div>
       <div className={`card-actions ${capture.deletedAt ? "trash-actions" : ""}`}>
         {capture.deletedAt ? <>
+          <span className="trash-expiry">{trashExpiryLabel(capture)}</span>
           <button className="icon-action archive-action active" onClick={(e) => { e.stopPropagation(); restoreCapture(capture); }} title="Restore" aria-label="Restore"><RotateCcw size={16} /></button>
           <button className="icon-action danger-action" onClick={(e) => { e.stopPropagation(); deleteCaptureForever(capture); }} title="Delete forever" aria-label="Delete forever"><Trash2 size={16} /></button>
         </> : <>
@@ -2964,6 +2976,7 @@ function TaskCard({ capture, onOpen }: { capture: Capture; onOpen: () => void })
       </div>
       <div className={`task-actions ${capture.deletedAt ? "trash-actions" : ""}`}>
         {capture.deletedAt ? <>
+          <span className="trash-expiry">{trashExpiryLabel(capture)}</span>
           <button className="icon-action archive-action active" onClick={(event) => { event.stopPropagation(); restoreCapture(capture); }} title="Restore task" aria-label="Restore task"><RotateCcw size={15} /></button>
           <button className="icon-action danger-action" onClick={(event) => { event.stopPropagation(); deleteCaptureForever(capture); }} title="Delete task forever" aria-label="Delete task forever"><Trash2 size={15} /></button>
         </> : <>
