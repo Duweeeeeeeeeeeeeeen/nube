@@ -2868,22 +2868,44 @@ function InboxView() {
 function ChecklistBlock({ capture, compact = false, onChange }: { capture: Capture; compact?: boolean; onChange?: (items: ChecklistItem[]) => void }) {
   const { updateCapture } = useBrain();
   const items = checklistForCapture(capture);
+  const [editingId, setEditingId] = React.useState<string | null>(null);
+  const [editingText, setEditingText] = React.useState("");
   if (!items.length) return null;
   const visibleItems = compact ? items.slice(0, 5) : items;
-  const toggleItem = (id: string) => {
-    const next = items.map((item) => item.id === id ? { ...item, done: !item.done } : item);
+  const commitItems = (next: ChecklistItem[]) => {
     if (onChange) onChange(next);
     else updateCapture(capture.id, { checklistItems: next, text: checklistTextFor(next) });
+  };
+  const toggleItem = (id: string) => {
+    const next = items.map((item) => item.id === id ? { ...item, done: !item.done } : item);
+    commitItems(next);
+  };
+  const startEdit = (item: ChecklistItem) => {
+    setEditingId(item.id);
+    setEditingText(item.text);
+  };
+  const saveEdit = () => {
+    const text = editingText.trim();
+    if (!editingId) return;
+    commitItems(items.map((item) => item.id === editingId ? { ...item, text: text || item.text } : item));
+    setEditingId(null);
+    setEditingText("");
+  };
+  const addChecklistItem = () => {
+    const next = [...items, { id: `checklist-${Date.now()}`, text: "New item", done: false }];
+    commitItems(next);
   };
   return (
     <div className={`checklist-block ${compact ? "compact" : ""}`}>
       {visibleItems.map((item) => (
-        <button key={item.id} className={item.done ? "done" : ""} onClick={(event) => { event.stopPropagation(); toggleItem(item.id); }} type="button">
-          <span><CheckCircle2 size={15} /></span>
-          <b>{item.text}</b>
-        </button>
+        <div key={item.id} className={`checklist-item ${item.done ? "done" : ""}`}>
+          <button className="checklist-toggle" onClick={(event) => { event.stopPropagation(); toggleItem(item.id); }} type="button" title={item.done ? "Mark open" : "Mark done"}><CheckCircle2 size={15} /></button>
+          {editingId === item.id ? <input value={editingText} onClick={(event) => event.stopPropagation()} onChange={(event) => setEditingText(event.target.value)} onBlur={saveEdit} onKeyDown={(event) => { if (event.key === "Enter") saveEdit(); if (event.key === "Escape") setEditingId(null); }} autoFocus /> : <b>{item.text}</b>}
+          {!compact && <button className="checklist-edit" onClick={(event) => { event.stopPropagation(); startEdit(item); }} type="button" title="Rename item"><Pencil size={13} /></button>}
+        </div>
       ))}
       {compact && items.length > visibleItems.length && <small>+{items.length - visibleItems.length} more</small>}
+      {!compact && <button className="checklist-add" onClick={(event) => { event.stopPropagation(); addChecklistItem(); }} type="button"><Plus size={14} />Add item</button>}
     </div>
   );
 }
@@ -3017,7 +3039,7 @@ function TaskCard({ capture, onOpen }: { capture: Capture; onOpen: () => void })
   if (locked) return (
     <motion.article className="task-card private-task-card" onClick={(event) => { event.stopPropagation(); if (unlockCapture(capture)) onOpen(); }} whileHover={{ y: -2 }}>
       <button className="task-check private-check" onClick={(event) => { event.stopPropagation(); unlockCapture(capture); }} title="Unlock task"><Lock size={18} /></button>
-      <div className="task-main">
+        <div className="task-main">
         <div className="task-title-row"><h3>Private task</h3></div>
         <p>Hidden until you enter your Private PIN.</p>
       </div>
@@ -3051,10 +3073,10 @@ function TaskCard({ capture, onOpen }: { capture: Capture; onOpen: () => void })
             />
           ))}
         </div>}
-        <div className="task-meta">
-          {tags.map((tag) => <span key={tag} style={tagChipStyle(tag, tagColors)}>{tag}</span>)}
-          {showSourceLabel && <small>{sourceLabel}</small>}
-        </div>
+      </div>
+      <div className="task-meta">
+        {tags.map((tag) => <span key={tag} style={tagChipStyle(tag, tagColors)}>{tag}</span>)}
+        {showSourceLabel && <small>{sourceLabel}</small>}
       </div>
       <div className="task-schedule">
         {dueLabel && <strong className={isOverdue ? "overdue" : ""}>{dueLabel}</strong>}
@@ -3126,8 +3148,7 @@ function DetailModal({ capture }: { capture: Capture }) {
     !draft.priority ? "Add a priority only if this needs attention before other tasks." : null,
   ].filter(Boolean) as string[] : [];
   const existingTags = React.useMemo(() => Array.from(new Set(captures.flatMap((item) => displayCaptureTags(item))))
-    .filter((tag) => !tags.some((current) => current.toLowerCase() === tag.toLowerCase()))
-    .sort((a, b) => a.localeCompare(b)), [captures, tags]);
+    .sort((a, b) => a.localeCompare(b)), [captures]);
   const readAttachment = (file: File) => new Promise<Attachment>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve({ id: `${Date.now()}-${file.name}`, name: file.name, mimeType: file.type, size: file.size, dataUrl: String(reader.result) });
@@ -3267,8 +3288,10 @@ function DetailModal({ capture }: { capture: Capture }) {
             <h3>Checklist</h3>
             <ChecklistBlock capture={draft as Capture} onChange={(items) => setDraft({ ...draft, checklistItems: items, text: checklistTextFor(items) })} />
           </>}
-          <h3>Content</h3>
-          <textarea value={draft.text} onChange={(e) => setDraft({ ...draft, text: e.target.value })} />
+          {checklistForCapture(draft as Capture).length === 0 && <>
+            <h3>Content</h3>
+            <textarea value={draft.text} onChange={(e) => setDraft({ ...draft, text: e.target.value })} />
+          </>}
           {showMoneyDirection && <>
             <h3>Money</h3>
             <div className="detail-money-card">
@@ -3293,7 +3316,10 @@ function DetailModal({ capture }: { capture: Capture }) {
             {existingTags.length > 0 && <div className="existing-tag-picker" aria-label="Existing tags">
               <span>Existing tags</span>
               <div>
-                {existingTags.slice(0, 18).map((tag) => <button key={tag} style={tagChipStyle(tag, tagColors)} onClick={() => addExistingTag(tag)} type="button">{tag}</button>)}
+                {existingTags.slice(0, 18).map((tag) => {
+                  const selected = tags.some((current) => current.toLowerCase() === tag.toLowerCase());
+                  return <button key={tag} className={selected ? "selected" : ""} style={tagChipStyle(tag, tagColors)} onClick={() => addExistingTag(tag)} type="button" disabled={selected}>{tag}</button>;
+                })}
               </div>
             </div>}
           </div>

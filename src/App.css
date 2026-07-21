@@ -307,8 +307,8 @@ button:disabled { cursor: progress; opacity: .7; }
 .text-action { color: var(--primary-deep); background: transparent; font-size: 13px; font-weight: 800; }
 .cards { display: grid; gap: 16px; }
 .task-list { display: grid; gap: 12px; }
-.task-card { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "check main schedule" "actions actions actions"; align-items: start; gap: 14px; padding: 16px; border-radius: 22px; background: rgba(255,255,255,.74); border: 1px solid rgba(224,231,255,.92); box-shadow: 0 16px 34px rgba(70,72,212,.045); cursor: pointer; }
-.task-card.task-audio-card { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "main main" "actions actions"; gap: 14px; padding: 18px; background: linear-gradient(145deg, rgba(240,253,250,.78), rgba(255,255,255,.72)); border-color: rgba(45,212,191,.28); }
+.task-card { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "check main schedule" "tags tags tags" "actions actions actions"; align-items: start; gap: 14px; padding: 16px; border-radius: 22px; background: rgba(255,255,255,.74); border: 1px solid rgba(224,231,255,.92); box-shadow: 0 16px 34px rgba(70,72,212,.045); cursor: pointer; }
+.task-card.task-audio-card { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "main main" "tags tags" "actions actions"; gap: 14px; padding: 18px; background: linear-gradient(145deg, rgba(240,253,250,.78), rgba(255,255,255,.72)); border-color: rgba(45,212,191,.28); }
 .task-card.starred { border-color: rgba(245,158,11,.36); background: linear-gradient(180deg, rgba(255,251,235,.78), rgba(255,255,255,.72)); }
 .task-card.task-audio-card.starred { background: linear-gradient(145deg, rgba(240,253,250,.76), rgba(255,251,235,.72)); }
 .task-card.completed { opacity: .62; }
@@ -325,9 +325,9 @@ button:disabled { cursor: progress; opacity: .7; }
 .task-audio-priority { justify-self: end; min-height: 25px; padding: 6px 9px; border-radius: 999px; color: var(--priority-color); background: color-mix(in srgb, var(--priority-color) 14%, white); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--priority-color) 20%, transparent); font-size: 11px; font-weight: 900; }
 .task-main p { display: -webkit-box; margin: 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 1; color: var(--muted); line-height: 1.4; font-size: 13px; font-weight: 720; }
 .task-card .checklist-block { max-width: min(520px, 100%); gap: 6px; margin: 2px 0 0; }
-.task-card .checklist-block button { grid-template-columns: 20px minmax(0, 1fr); gap: 8px; min-height: 30px; padding: 6px 9px; border-radius: 11px; background: rgba(255,255,255,.58); }
-.task-card .checklist-block button span { width: 20px; height: 20px; }
-.task-card .checklist-block button b { font-size: 12px; }
+.task-card .checklist-block .checklist-item { grid-template-columns: 20px minmax(0, 1fr); gap: 8px; min-height: 30px; padding: 6px 9px; border-radius: 11px; background: rgba(255,255,255,.58); }
+.task-card .checklist-block .checklist-toggle { width: 20px; height: 20px; }
+.task-card .checklist-block .checklist-item b { font-size: 12px; }
 .task-card .checklist-block small { padding: 4px 7px; font-size: 10px; }
 .task-audio-list { width: 100%; max-width: min(500px, 100%); display: grid; gap: 8px; margin-top: 0; }
 .task-card.task-audio-card .task-audio-list { width: 100%; min-width: 100%; max-width: none; justify-self: stretch; }
@@ -375,8 +375,7 @@ button:disabled { cursor: progress; opacity: .7; }
 .task-voice-controls > button { justify-self: end; }
 .task-missing-chip { width: fit-content; min-height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 9px; border-radius: 999px; color: #b45309; background: rgba(255,247,237,.84); box-shadow: inset 0 0 0 1px rgba(251,146,60,.28); font-size: 11px; font-weight: 900; }
 .task-missing-chip svg { flex: 0 0 auto; }
-.task-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; min-width: 0; width: 100%; margin-top: 4px; }
-.task-main > .task-meta { grid-column: 1 / -1; }
+.task-meta { grid-area: tags; display: flex; align-items: center; flex-wrap: wrap; gap: 7px; min-width: 0; width: 100%; margin-top: 0; }
 .task-meta span, .task-meta small { min-height: 24px; display: inline-flex; align-items: center; padding: 5px 8px; border-radius: 999px; font-size: 11px; font-weight: 850; }
 .task-meta span { color: var(--tag-color, var(--primary-deep)); background: var(--tag-bg, rgba(224,231,255,.62)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tag-color, var(--primary)) 18%, transparent); }
 .task-meta small { color: var(--muted); background: rgba(224,231,255,.42); }
@@ -504,13 +503,16 @@ button:disabled { cursor: progress; opacity: .7; }
 .link-preview-strip span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
 .link-preview-strip a { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; padding: 7px 9px; border-radius: 999px; color: white; background: var(--primary); font-size: 11px; font-weight: 950; text-decoration: none; box-shadow: 0 10px 22px rgba(99,102,241,.18); }
 .checklist-block { display: grid; gap: 8px; margin-top: 14px; }
-.checklist-block button { display: grid; grid-template-columns: 24px minmax(0, 1fr); align-items: center; gap: 9px; width: 100%; padding: 9px 10px; border-radius: 14px; color: var(--text); background: rgba(248,250,255,.72); border: 1px solid rgba(224,231,255,.76); text-align: left; }
-.checklist-block button span { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 999px; color: var(--primary-deep); background: rgba(224,231,255,.75); }
-.checklist-block button b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 850; }
-.checklist-block button.done { color: var(--muted); background: rgba(240,253,244,.62); border-color: rgba(167,243,208,.9); }
-.checklist-block button.done span { color: white; background: #10b981; }
-.checklist-block button.done b { text-decoration: line-through; opacity: .68; }
+.checklist-item { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; gap: 9px; width: 100%; padding: 9px 10px; border-radius: 14px; color: var(--text); background: rgba(248,250,255,.72); border: 1px solid rgba(224,231,255,.76); text-align: left; }
+.checklist-toggle { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 999px; color: var(--primary-deep); background: rgba(224,231,255,.75); }
+.checklist-item b, .checklist-item input { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 850; }
+.checklist-item input { width: 100%; border: 0; outline: 0; color: var(--text); background: transparent; }
+.checklist-edit { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 999px; color: var(--muted); background: rgba(224,231,255,.58); }
+.checklist-item.done { color: var(--muted); background: rgba(240,253,244,.62); border-color: rgba(167,243,208,.9); }
+.checklist-item.done .checklist-toggle { color: white; background: #10b981; }
+.checklist-item.done b { text-decoration: line-through; opacity: .68; }
 .checklist-block small { justify-self: start; padding: 5px 8px; border-radius: 999px; color: var(--primary-deep); background: rgba(224,231,255,.58); font-size: 11px; font-weight: 900; }
+.checklist-add { justify-self: start; display: inline-flex; align-items: center; gap: 6px; min-height: 30px; border-radius: 999px; padding: 7px 10px; color: var(--primary-deep); background: rgba(224,231,255,.62); font-size: 12px; font-weight: 900; }
 .card-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; color: var(--muted); font-size: 12px; overflow: visible; }
 .compact-card-meta { flex-wrap: nowrap; align-items: center; justify-content: space-between; overflow: visible; padding-top: 2px; }
 .card-meta span { min-height: 26px; display: inline-flex; align-items: center; padding: 6px 9px; border-radius: 999px; background: rgba(224,231,255,.45); line-height: 1.2; }
@@ -600,6 +602,8 @@ button:disabled { cursor: progress; opacity: .7; }
 .existing-tag-picker > div { display: flex; flex-wrap: wrap; gap: 7px; }
 .existing-tag-picker button { max-width: 150px; min-height: 28px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 999px; padding: 6px 9px; color: var(--tag-color); background: var(--tag-bg); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tag-color) 18%, transparent); font-size: 12px; font-weight: 900; }
 .existing-tag-picker button:hover { transform: translateY(-1px); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tag-color) 24%, transparent), 0 10px 20px color-mix(in srgb, var(--tag-color) 10%, transparent); }
+.existing-tag-picker button.selected { opacity: .48; cursor: default; }
+.existing-tag-picker button.selected:hover { transform: none; }
 .detail-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; padding-top: 18px; border-top: 1px solid rgba(199,196,215,.35); }
 .detail-actions button { display: inline-flex; align-items: center; gap: 7px; padding: 9px 12px; border-radius: 999px; color: var(--primary-deep); background: rgba(224,231,255,.72); font-weight: 800; }
 .segmented-actions { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -1553,8 +1557,8 @@ button:disabled { cursor: progress; opacity: .7; }
   .inbox-mode-toggle button { flex: 1 1 0; justify-content: center; min-width: 0; padding: 8px 8px; }
   .capture-list { gap: 14px; padding-bottom: 40px; }
   .task-list { gap: 10px; }
-  .task-card { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "check main" "schedule schedule" "actions actions"; align-items: start; gap: 12px; padding: 14px; border-radius: 20px; }
-  .task-card.task-audio-card { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "main" "actions"; }
+  .task-card { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "check main" "schedule schedule" "tags tags" "actions actions"; align-items: start; gap: 12px; padding: 14px; border-radius: 20px; }
+  .task-card.task-audio-card { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "main" "schedule" "tags" "actions"; }
   .task-audio-card .task-schedule { position: static; justify-self: end; margin-top: -4px; }
   .task-audio-card .task-audio-priority { position: static; justify-self: end; margin: 0 0 4px; }
   .task-check { width: 40px; height: 40px; }
