@@ -412,13 +412,12 @@ const initialCaptures: Capture[] = [
 const collectionOrder: CaptureType[] = ["Actionable", "Idea", "Expense", "Place", "Document", "Audio", "Person", "Study", "Work", "Health", "Home", "Travel", "Journal", "Link"];
 const presetTags = ["Tutorial", "Inbox", "Editable", "Important", "Work", "Personal", "Receipt", "Place", "Idea", "Follow up"];
 const fileMetadataTags = new Set(["Image upload", "File indexed", "Cloud file", "Local file"]);
-const systemMetadataTags = new Set(["Webhook", "browser extension", "Browser", "Selection", "Page"]);
+const systemMetadataTags = new Set(["Webhook", "browser extension", "Browser", "Selection", "Page", "AI tagged", "Auto organized", "Reminder suggested", "Voice note"]);
 const isFileSizeTag = (tag: string) => /^\d+(?:\.\d+)?\s?(?:B|KB|MB|GB)$/i.test(tag.trim());
 const visibleCaptureTags = (tags: string[]) => {
   const hiddenTags = new Set([...fileMetadataTags, ...systemMetadataTags].map((tag) => tag.toLowerCase()));
   const cleaned = tags.map((tag) => tag.trim()).filter((tag) => tag && !hiddenTags.has(tag.toLowerCase()) && !isFileSizeTag(tag));
   const lowerSet = new Set(cleaned.map((tag) => tag.toLowerCase()));
-  const hasVoice = lowerSet.has("voice note") || lowerSet.has("audio");
   const hasGoogleCalendar = lowerSet.has("google calendar");
   const hasWebPage = lowerSet.has("web page") || lowerSet.has("saved link") || lowerSet.has("link");
   const hasGmail = lowerSet.has("gmail");
@@ -445,7 +444,6 @@ const visibleCaptureTags = (tags: string[]) => {
     weather: "Weather",
     gmail: "Gmail",
     attachment: "Attachment",
-    "voice note": "Voice note",
     audio: "Audio",
   };
   const redundantWithWebPage = new Set(["Browser", "Selection", "Page", "Saved link", "Link"]);
@@ -456,7 +454,6 @@ const visibleCaptureTags = (tags: string[]) => {
   cleaned.forEach((tag) => {
     const lower = tag.toLowerCase();
     const normalized = topicAliases[lower] ?? tag;
-    if (hasVoice && normalized === "Audio") return;
     if (hasGoogleCalendar && redundantWithGoogleCalendar.has(normalized)) return;
     if (hasWebPage && redundantWithWebPage.has(normalized)) return;
     if (hasWebPage && noisyWithWebPage.has(normalized)) return;
@@ -464,7 +461,7 @@ const visibleCaptureTags = (tags: string[]) => {
     const key = normalized.toLowerCase();
     if (!unique.has(key)) unique.set(key, normalized);
   });
-  const priority = ["Google Calendar", "Gmail", "Web page", "Voice note", "Attachment", "Calendar", "Place", "Expense", "Actionable", "Idea", "Document", "Study", "Work", "Health", "Home", "Travel", "Person", "Journal", "API", "Weather"];
+  const priority = ["Google Calendar", "Gmail", "Web page", "Attachment", "Calendar", "Place", "Expense", "Actionable", "Idea", "Document", "Study", "Work", "Health", "Home", "Travel", "Person", "Journal", "API", "Weather"];
   return Array.from(unique.values())
     .sort((a, b) => {
       const aIndex = priority.indexOf(a);
@@ -832,17 +829,14 @@ const classifyCapture = (text: string): CaptureType => {
 
 const metadataFor = (text: string, type: CaptureType) => {
   const lower = text.toLowerCase();
-  const tags = new Set<string>([type, "AI tagged"]);
+  const tags = new Set<string>([type]);
   if (lower.includes("marco")) tags.add("Marco");
   if (lower.includes("luca")) tags.add("Luca");
   if (lower.includes("milan") || lower.includes("brera")) tags.add("Milan");
   if (/\b(restaurant|ristorante|osteria|trattoria)\b/.test(lower)) tags.add("Restaurant");
-  if (type === "Actionable") tags.add("Reminder suggested");
   if (type === "Expense") tags.add("Receipt extraction");
   if (type === "Document") tags.add("File indexed");
-  if (type === "Audio") tags.add("Voice note");
   if (type === "Link") tags.add("Saved link");
-  if (tags.size < 3) tags.add("Auto organized");
   return Array.from(tags);
 };
 
@@ -2390,7 +2384,7 @@ function InboxView() {
     const audioOnly = Boolean(voiceAttachment) && !draft.trim();
     await addCapture(text, source, voiceAttachment ? {
       ...(audioOnly ? { title: pendingVoiceAttachment?.title ?? "Voice note", text: "", type: "Audio" as CaptureType, provider: "browser-fallback" as const } : { type: "Audio" as CaptureType }),
-      metadata: ["Voice note"],
+      metadata: [],
       attachments: [voiceAttachment],
       attachmentName: voiceAttachment.name,
       attachmentSize: voiceAttachment.size,
