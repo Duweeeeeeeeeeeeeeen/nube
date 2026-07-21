@@ -2559,8 +2559,9 @@ function InboxView() {
   const activeFilterCount = [tagFilter, typeFilter !== "All", priorityFilter !== "All", starFilter !== "All", assetFilter !== "All", moneyFilter !== "All", statusFilter !== "All", collectionFilter, dateFilter].filter(Boolean).length;
   const todayKey = dateKey(new Date());
   const captureSectionTitle = statusFilter === "Trash" ? "Trash" : mode === "search" ? "Search results" : dateFilter?.day === todayKey ? "Today" : dateFilter ? "Scheduled captures" : "Recent captures";
-  const visibleList = listMode === "tasks" ? taskCaptures : orderedFiltered;
-  const visibleSectionTitle = listMode === "tasks" ? "Tasks" : captureSectionTitle;
+  const isTrashView = statusFilter === "Trash";
+  const visibleList = isTrashView ? orderedFiltered : listMode === "tasks" ? taskCaptures : orderedFiltered;
+  const visibleSectionTitle = isTrashView ? "Trash" : listMode === "tasks" ? "Tasks" : captureSectionTitle;
   const recordingBars = activeVoiceMode === "audio-only" ? voiceLevels : voiceLevels.slice(0, 7);
   const seedDraft = (text: string) => {
     setMode("capture");
@@ -2700,13 +2701,11 @@ function InboxView() {
         </div>
         <div className="filter-bar-right">
           <button className={statusFilter === "Trash" ? "active trash-shortcut icon-only" : "trash-shortcut icon-only"} onClick={() => setStatusFilter(statusFilter === "Trash" ? "All" : "Trash")} title={statusFilter === "Trash" ? "Close trash" : "Open trash"} aria-label={statusFilter === "Trash" ? "Close trash" : "Open trash"}><Trash2 size={16} />{trashCount > 0 && <b>{trashCount}</b>}</button>
-          {statusFilter === "Trash" && trashCount > 0 && <button className="icon-only danger-soft" onClick={emptyTrash} title={`Empty trash. Items also auto-delete after ${TRASH_RETENTION_DAYS} days.`} aria-label="Empty trash"><Trash2 size={16} /></button>}
           <button className="icon-only" onClick={() => void importGoogleCalendarQuick()} disabled={calendarImporting} title={calendarImporting ? "Importing Google Calendar" : "Import Google Calendar"} aria-label={calendarImporting ? "Importing Google Calendar" : "Import Google Calendar"}><CalendarCheck size={16} /></button>
           <button className="icon-only" onClick={() => inboxCalendarInput.current?.click()} title="Import .ics file" aria-label="Import .ics file"><Upload size={16} /></button>
           <input ref={inboxCalendarInput} className="hidden-file" type="file" accept=".ics,text/calendar" onChange={(event) => { void importCalendarFileQuick(event.target.files?.[0]); event.currentTarget.value = ""; }} />
         </div>
       </div>
-      {statusFilter === "Trash" && <div className="trash-note">Trashed captures can be restored or deleted forever. Nube clears them automatically after {TRASH_RETENTION_DAYS} days.</div>}
       {filterOpen && <div className="filter-panel">
         <OptionPicker label="Category" value={typeFilter} options={["All", ...collectionOrder]} onChange={setTypeFilter} />
         <OptionPicker label="Priority" value={priorityFilter} options={["All", "Low", "Medium", "High"]} onChange={setPriorityFilter} formatLabel={(value) => value === "Medium" ? "Med" : value} />
@@ -2722,13 +2721,14 @@ function InboxView() {
       <div className="content-grid inbox-list-grid">
         <section>
           <div className="section-title inbox-mode-title">
-            <span>{visibleSectionTitle}</span>
-            <div className="inbox-mode-toggle" aria-label="Inbox list mode">
+            <span>{visibleSectionTitle}{isTrashView && <small>Items stay here for {TRASH_RETENTION_DAYS} days from the moment they are moved to trash.</small>}</span>
+            {isTrashView && trashCount > 0 && <button className="section-empty-trash" onClick={emptyTrash} title="Delete every trashed item forever">Empty trash</button>}
+            {!isTrashView && <div className="inbox-mode-toggle" aria-label="Inbox list mode">
               <button className={listMode === "captures" ? "active" : ""} onClick={() => setListMode("captures")} title="Captures" aria-label="Captures"><Inbox size={15} /><b>{orderedFiltered.length}</b></button>
               <button className={listMode === "tasks" ? "active" : ""} onClick={() => setListMode("tasks")} title="Tasks" aria-label="Tasks"><CheckCircle2 size={15} /><b>{taskCaptures.filter((capture) => !capture.completed).length}</b></button>
-            </div>
+            </div>}
           </div>
-          <div className={listMode === "tasks" ? "task-list" : "cards"}>{visibleList.length ? visibleList.map((capture) => listMode === "tasks" ? <TaskCard key={capture.id} capture={capture} onOpen={() => setSelectedCapture(capture)} /> : <SmartCard key={capture.id} capture={capture} onOpen={() => setSelectedCapture(capture)} />) : <div className="empty-state empty-state-large"><Sparkles size={24} /><h3>{listMode === "tasks" ? "No tasks here" : emptyState.title}</h3><p>{listMode === "tasks" ? "Tasks appear when a capture has an action, date, reminder, or calendar event." : emptyState.text}</p><div className="empty-actions">
+          <div className={!isTrashView && listMode === "tasks" ? "task-list" : "cards"}>{visibleList.length ? visibleList.map((capture) => !isTrashView && listMode === "tasks" ? <TaskCard key={capture.id} capture={capture} onOpen={() => setSelectedCapture(capture)} /> : <SmartCard key={capture.id} capture={capture} onOpen={() => setSelectedCapture(capture)} />) : <div className="empty-state empty-state-large"><Sparkles size={24} /><h3>{!isTrashView && listMode === "tasks" ? "No tasks here" : emptyState.title}</h3><p>{!isTrashView && listMode === "tasks" ? "Tasks appear when a capture has an action, date, reminder, or calendar event." : emptyState.text}</p><div className="empty-actions">
           {mode === "search" && <button onClick={() => { setDraft(""); setAskAnswer(null); setMode("capture"); window.setTimeout(() => input.current?.focus(), 0); }}>Clear search</button>}
           {dateFilter && <button onClick={() => setDateFilter(null)}>Clear date</button>}
           {activeFilterCount > 0 && <button onClick={clearFilters}>Clear filters</button>}
