@@ -603,7 +603,22 @@ const simpleTranslate = (text: string, target: "english" | "italian") => {
   return Object.entries(dictionary).reduce((current, [from, to]) => current.replace(new RegExp(from, "gi"), to), text);
 };
 
-const buildIntentCapture = (text: string, source: string, fallbackType: CaptureType) => {
+type IntentCapture = Partial<Capture> & { extraDueDates?: string[] };
+
+const taskTitleFromText = (text: string) => {
+  const normalized = text.replace(/\s+/g, " ").trim();
+  const beforeTiming = normalized
+    .split(/\s*,?\s*(?:segna che|ricordamelo|mettimela|mettil[ao]|queste sono|cose che devo fare|dalle|from)\b/i)[0]
+    ?.trim() ?? normalized;
+  const cleaned = beforeTiming
+    .replace(/^(?:devo|devi|mi serve di|ricordami di|ricorda di|ho bisogno di|i need to|need to|i have to)\s+/i, "")
+    .replace(/^(?:scrivere|fare|preparare|comprare|studiare)\s+/i, (match) => match.trim().toLowerCase() === "scrivere" ? "" : match)
+    .replace(/^(?:la|il|lo|le|gli|i|un|una|the|a)\s+/i, "")
+    .trim();
+  return compactTitle(cleaned || beforeTiming, "Task").replace(/^./, (letter) => letter.toUpperCase());
+};
+
+const buildIntentCapture = (text: string, source: string, fallbackType: CaptureType): IntentCapture | null => {
   const lower = text.toLowerCase();
   const normalized = lower.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const asksEnglish = /\b(in english|translate.*english|traduci.*inglese|in inglese)\b/.test(normalized);
@@ -629,6 +644,29 @@ const buildIntentCapture = (text: string, source: string, fallbackType: CaptureT
       type: "Travel" as CaptureType,
       metadata: ["Checklist", "Packing", "Travel"],
       checklistItems,
+    };
+  }
+  const timeWindow = inferTimeWindowFromText(text);
+  const explicitDues = explicitDateDuesFromText(text, timeWindow.taskStartTime);
+  const hasTaskIntent = /\b(devo|ricordami|segna|todo|task|i need to|i have to)\b/.test(normalized);
+  const hasChecklistPayload = /:\s*[^:]+(?:,|;|\n)/.test(text) || /\bqueste sono le cose che devo fare\b/.test(normalized);
+  if (hasTaskIntent && (timeWindow.taskStartTime || explicitDues.length || hasChecklistPayload)) {
+    const listSource = text.includes(":") ? text.split(":").slice(1).join(":") : "";
+    const items = extractListItems(listSource || text);
+    const checklistItems = items.length ? items.map((item, index) => ({ id: `task-list-${index}`, text: item, done: false })) : undefined;
+    const inferred = inferDueFromText(text);
+    const due = applyTimeToDue(inferred ?? explicitDues[0], timeWindow.taskStartTime);
+    const extraDueDates = explicitDues.filter((item) => item !== due);
+    return {
+      title: taskTitleFromText(text),
+      text: checklistItems ? checklistTextFor(checklistItems) : "",
+      type: "Actionable",
+      metadata: visibleCaptureTags(["Task", checklistItems ? "Checklist" : "Actionable"]),
+      due,
+      taskStartTime: timeWindow.taskStartTime,
+      taskEndTime: timeWindow.taskEndTime,
+      checklistItems,
+      extraDueDates,
     };
   }
   const isChecklist = /\b(checklist|lista|list|cose da|things to|todo|to do)\b/.test(normalized);
@@ -696,6 +734,36 @@ const inferDueFromText = (text: string) => {
     return target.toISOString();
   }
   return undefined;
+};
+const inferTimeWindowFromText = (text: string) => {
+  const value = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const match = value.match(/\b(?:dalle|from)?\s*(\d{1,2})(?::|[.,])?(\d{2})?\s*(?:alle|a|to|-)\s*(\d{1,2})(?::|[.,])?(\d{2})?\b/);
+  if (!match) return {};
+  const pad = (raw: string, minutes = "00") => `${String(Math.min(23, Math.max(0, Number(raw)))).padStart(2, "0")}:${minutes ? String(Math.min(59, Math.max(0, Number(minutes)))).padStart(2, "0") : "00"}`;
+  return { taskStartTime: pad(match[1], match[2] ?? "00"), taskEndTime: pad(match[3], match[4] ?? "00") };
+};
+const applyTimeToDue = (due: string | undefined, time?: string) => {
+  if (!due || !time) return due;
+  const date = parseDueDate(due);
+  const [hours, minutes] = time.split(":").map(Number);
+  date.setHours(hours || 0, minutes || 0, 0, 0);
+  return date.toISOString();
+};
+const explicitDateDuesFromText = (text: string, startTime?: string) => {
+  const normalized = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const currentYear = new Date().getFullYear();
+  const monthNames: Record<string, number> = {
+    gennaio: 0, january: 0, febbraio: 1, february: 1, marzo: 2, march: 2, aprile: 3, april: 3, maggio: 4, may: 4, giugno: 5, june: 5,
+    luglio: 6, july: 6, agosto: 7, august: 7, settembre: 8, september: 8, ottobre: 9, october: 9, novembre: 10, november: 10, dicembre: 11, december: 11,
+  };
+  const dues: string[] = [];
+  for (const match of normalized.matchAll(/\b(?:il|per il|anche per il|for)?\s*(\d{1,2})\s+(gennaio|january|febbraio|february|marzo|march|aprile|april|maggio|may|giugno|june|luglio|july|agosto|august|settembre|september|ottobre|october|novembre|november|dicembre|december)\b/g)) {
+    const date = new Date(currentYear, monthNames[match[2]], Number(match[1]));
+    const [hours, minutes] = (startTime ?? "12:00").split(":").map(Number);
+    date.setHours(hours || 0, minutes || 0, 0, 0);
+    dues.push(date.toISOString());
+  }
+  return Array.from(new Set(dues));
 };
 const usefulSuggestedAction = (action?: string | null) => {
   const value = action?.trim();
@@ -1724,6 +1792,8 @@ function App() {
     const inferredPriority = overrides.priority ?? inferPriorityFromText(text);
     const intentDue = intentCapture && "due" in intentCapture ? intentCapture.due as string | undefined : undefined;
     const inferredDue = overrides.due ?? intentDue ?? inferDueFromText(text);
+    const taskStartTime = overrides.taskStartTime ?? intentCapture?.taskStartTime;
+    const taskEndTime = overrides.taskEndTime ?? intentCapture?.taskEndTime;
     const splitText = splitCaptureText(text, isVoice ? "Voice note" : "Untitled capture");
     const localId = Date.now();
     const localCapture: Capture = {
@@ -1736,6 +1806,8 @@ function App() {
       metadata: visibleCaptureTags([...(overrides.metadata ?? []), ...(intentCapture?.metadata ?? []), ...metadataFor(text, intentCapture?.type ?? localType)]),
       createdAt: new Date().toISOString(),
       due: inferredDue,
+      taskStartTime,
+      taskEndTime,
       priority: inferredPriority,
       starred: shouldStar,
       suggestedAction: usefulSuggestedAction(inferredDue ? undefined : localType === "Actionable" ? "Add this to Today" : undefined),
@@ -1746,7 +1818,14 @@ function App() {
       attachments: overrides.attachments,
       checklistItems: overrides.checklistItems ?? intentCapture?.checklistItems,
     };
-    setCaptures((current) => [localCapture, ...current]);
+    const extraLocalCaptures = (intentCapture?.extraDueDates ?? []).map((due, index) => ({
+      ...localCapture,
+      id: localId + index + 1,
+      due,
+      createdAt: new Date(Date.now() + index + 1).toISOString(),
+      calendar: undefined,
+    }));
+    setCaptures((current) => [localCapture, ...extraLocalCaptures, ...current]);
 
     const ai = isVoice ? null : await classifyCaptureWithApi(text, source);
     if (!ai) return localId;
@@ -1761,6 +1840,8 @@ function App() {
       metadata: visibleCaptureTags([...(overrides.metadata ?? []), ...(intentCapture?.metadata ?? []), ...(ai?.metadata ?? metadataFor(text, type))]),
       createdAt: new Date().toISOString(),
       due: inferredDue ?? ai?.due ?? undefined,
+      taskStartTime,
+      taskEndTime,
       priority: overrides.priority ?? ai?.priority ?? inferredPriority,
       starred: shouldStar,
       suggestedAction: usefulSuggestedAction(inferredDue || ai?.due ? undefined : ai?.suggestedAction ?? (type === "Actionable" ? "Add this to Today" : undefined)),
