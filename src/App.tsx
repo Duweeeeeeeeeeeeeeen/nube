@@ -3049,10 +3049,10 @@ function TaskCard({ capture, onOpen }: { capture: Capture; onOpen: () => void })
         </div>
       </div>
       <div className="task-schedule">
-        {isAudioTask && capture.priority && <span className="priority-pill task-audio-priority" style={{ "--priority-color": priorityColor(capture.priority) } as React.CSSProperties}>{priorityLabel(capture.priority)}</span>}
         {dueLabel && <strong className={isOverdue ? "overdue" : ""}>{dueLabel}</strong>}
         {timeLabel && <span>{timeLabel}</span>}
       </div>
+      {isAudioTask && capture.priority && <span className="priority-pill task-audio-priority" style={{ "--priority-color": priorityColor(capture.priority) } as React.CSSProperties}>{priorityLabel(capture.priority)}</span>}
       <div className={`task-actions ${capture.deletedAt ? "trash-actions" : ""}`}>
         {capture.deletedAt ? <>
           <span className="trash-expiry">{trashExpiryLabel(capture)}</span>
