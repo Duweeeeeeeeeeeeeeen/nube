@@ -3110,7 +3110,7 @@ const taskWeekDays = [
 ];
 
 function DetailModal({ capture }: { capture: Capture }) {
-  const { updateCapture, setCaptures, setSelectedCapture, setPreviewImage, tagColors, setTagColors, pluginSettings, privatePinHash, setView, lockCapture } = useBrain();
+  const { captures, updateCapture, setCaptures, setSelectedCapture, setPreviewImage, tagColors, setTagColors, pluginSettings, privatePinHash, setView, lockCapture } = useBrain();
   const [draft, setDraft] = React.useState({ ...capture, due: toDateTimeLocal(capture.due) });
   const [tags, setTags] = React.useState<string[]>(displayCaptureTags(capture));
   const [repeatDays, setRepeatDays] = React.useState<number[]>(capture.repeatDays ?? []);
@@ -3125,6 +3125,9 @@ function DetailModal({ capture }: { capture: Capture }) {
     !draft.taskStartTime || !draft.taskEndTime ? "Add a time window if you want to plan when it happens." : null,
     !draft.priority ? "Add a priority only if this needs attention before other tasks." : null,
   ].filter(Boolean) as string[] : [];
+  const existingTags = React.useMemo(() => Array.from(new Set(captures.flatMap((item) => displayCaptureTags(item))))
+    .filter((tag) => !tags.some((current) => current.toLowerCase() === tag.toLowerCase()))
+    .sort((a, b) => a.localeCompare(b)), [captures, tags]);
   const readAttachment = (file: File) => new Promise<Attachment>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve({ id: `${Date.now()}-${file.name}`, name: file.name, mimeType: file.type, size: file.size, dataUrl: String(reader.result) });
@@ -3146,6 +3149,7 @@ function DetailModal({ capture }: { capture: Capture }) {
     setTags((current) => Array.from(new Set([...current, tag])));
     setNewTag("");
   };
+  const addExistingTag = (tag: string) => setTags((current) => Array.from(new Set([...current, tag])));
   const setMoneyDirection = (direction: MoneySignal["direction"]) => {
     const clean = tags.filter((tag) => !tag.startsWith("Money "));
     const nextTag = direction === "income" ? "Money income" : direction === "expense" ? "Money expense" : "Money review";
@@ -3286,6 +3290,12 @@ function DetailModal({ capture }: { capture: Capture }) {
               </div>
             ))}
             <div className="tag-add-row"><input value={newTag} onChange={(event) => setNewTag(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") addTag(); }} placeholder="Add tag..." /><button onClick={addTag}>Add tag</button></div>
+            {existingTags.length > 0 && <div className="existing-tag-picker" aria-label="Existing tags">
+              <span>Existing tags</span>
+              <div>
+                {existingTags.slice(0, 18).map((tag) => <button key={tag} style={tagChipStyle(tag, tagColors)} onClick={() => addExistingTag(tag)} type="button">{tag}</button>)}
+              </div>
+            </div>}
           </div>
           <h3>Attachments</h3>
           <div className="attachment-manager">
