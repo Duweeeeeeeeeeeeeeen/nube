@@ -356,6 +356,21 @@ button:disabled { cursor: progress; opacity: .7; }
 .task-card.task-audio-card .voice-progress-rail { display: block; grid-column: 1 / -1; width: 100%; min-width: 0; max-width: none; justify-self: stretch; }
 .task-audio-card .task-missing-chip { margin-top: 2px; }
 .task-audio-card .task-actions { margin-top: 0; padding-top: 0; border-top: 0; }
+.task-voice-player { width: 100%; display: grid; gap: 8px; }
+.task-voice-head { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: center; gap: 10px; }
+.task-voice-play { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 999px; color: white; background: var(--primary); box-shadow: 0 10px 22px rgba(99,102,241,.22); }
+.task-voice-play:disabled { color: #94a3b8; background: rgba(226,232,240,.82); box-shadow: none; }
+.task-voice-title { min-width: 0; display: flex; align-items: center; gap: 7px; }
+.task-voice-title b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; line-height: 1.2; }
+.task-voice-title input { width: 100%; min-width: 0; border: 0; outline: 0; padding: 0; color: var(--text); background: transparent; font-size: 16px; font-weight: 950; }
+.task-voice-title button { width: 24px; min-width: 24px; height: 24px; display: grid; place-items: center; border-radius: 999px; color: var(--muted); background: rgba(224,231,255,.58); }
+.task-voice-rail { width: 100%; height: 8px; min-height: 8px; padding: 0; border-radius: 999px; background: rgba(199,210,254,.58); overflow: hidden; }
+.task-voice-rail span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--primary), #8b8df8); box-shadow: 0 8px 18px rgba(99,102,241,.18); }
+.task-voice-controls { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; }
+.task-voice-controls time { justify-self: start; color: var(--text); font-size: 12px; font-weight: 900; white-space: nowrap; }
+.task-voice-controls div { justify-self: center; display: inline-flex; align-items: center; gap: 8px; }
+.task-voice-controls button { min-height: 24px; display: inline-flex; align-items: center; gap: 4px; padding: 4px 7px; border-radius: 999px; color: var(--muted); background: rgba(248,250,252,.78); font-size: 10px; font-weight: 950; }
+.task-voice-controls > button { justify-self: end; }
 .task-missing-chip { width: fit-content; min-height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 9px; border-radius: 999px; color: #b45309; background: rgba(255,247,237,.84); box-shadow: inset 0 0 0 1px rgba(251,146,60,.28); font-size: 11px; font-weight: 900; }
 .task-missing-chip svg { flex: 0 0 auto; }
 .task-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; min-width: 0; }

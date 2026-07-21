@@ -1263,6 +1263,79 @@ function VoiceNotePlayer({ attachment, compact = false, minimal = false, allowCa
   );
 }
 
+function TaskVoicePlayer({ attachment, onRename }: { attachment: Attachment; onRename?: (title: string) => void }) {
+  const audioRef = React.useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = React.useState(false);
+  const [current, setCurrent] = React.useState(0);
+  const [duration, setDuration] = React.useState(0);
+  const [rate, setRate] = React.useState(1);
+  const [editingTitle, setEditingTitle] = React.useState(false);
+  const voiceLabel = attachment.title || (attachment.name.match(/voice-note/i) ? "Voice note" : attachment.name.replace(/\.[^.]+$/, "").replace(/[-_]/g, " "));
+  const [titleDraft, setTitleDraft] = React.useState(voiceLabel);
+  const playable = Boolean(attachment.dataUrl);
+  React.useEffect(() => {
+    if (!editingTitle) setTitleDraft(voiceLabel);
+  }, [editingTitle, voiceLabel]);
+  const toggle = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (audio.paused) void audio.play();
+    else audio.pause();
+  };
+  const seek = (delta: number) => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.currentTime = Math.max(0, Math.min(audio.duration || 0, audio.currentTime + delta));
+  };
+  const cycleRate = () => {
+    const rates = [1, 1.5, 2, 0.5];
+    const next = rates[(rates.indexOf(rate) + 1) % rates.length] ?? 1;
+    setRate(next);
+    if (audioRef.current) audioRef.current.playbackRate = next;
+  };
+  const progress = duration ? Math.max(1, (current / duration) * 100) : 1;
+  return (
+    <div className="task-voice-player" onClick={(event) => event.stopPropagation()}>
+      {attachment.dataUrl ? <audio
+        ref={audioRef}
+        src={attachment.dataUrl}
+        onLoadedMetadata={(event) => {
+          event.currentTarget.playbackRate = rate;
+          setDuration(event.currentTarget.duration);
+        }}
+        onTimeUpdate={(event) => setCurrent(event.currentTarget.currentTime)}
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onEnded={() => setPlaying(false)}
+      /> : null}
+      <div className="task-voice-head">
+        <button className="task-voice-play" disabled={!playable} onClick={toggle} type="button" aria-label={playing ? "Pause voice note" : "Play voice note"}>
+          {playing ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
+        </button>
+        <div className="task-voice-title">
+          {editingTitle && onRename ? <input autoFocus value={titleDraft} onBlur={() => { onRename(titleDraft.trim() || "Voice note"); setEditingTitle(false); }} onChange={(event) => setTitleDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); if (event.key === "Escape") { setTitleDraft(voiceLabel); setEditingTitle(false); } }} /> : <b>{voiceLabel}</b>}
+          {onRename && <button onClick={() => { setTitleDraft(voiceLabel); setEditingTitle((currentValue) => !currentValue); }} title="Rename voice note" type="button"><Pencil size={13} /></button>}
+        </div>
+      </div>
+      {playable ? <button className="task-voice-rail" onClick={(event) => {
+        const audio = audioRef.current;
+        if (!audio || !duration) return;
+        const rect = event.currentTarget.getBoundingClientRect();
+        audio.currentTime = duration * ((event.clientX - rect.left) / rect.width);
+      }} type="button"><span style={{ width: `${progress}%` }} /></button> : <div className="voice-missing"><Mic size={15} />Audio is saved, but the playable file is only available on this device.</div>}
+      <div className="task-voice-controls">
+        <time>{formatDuration(current)} / {formatDuration(duration)}</time>
+        <div>
+          <button onClick={() => seek(-10)} type="button"><RotateCcw size={14} />10</button>
+          <button onClick={cycleRate} type="button">{rate.toFixed(1)}x</button>
+          <button onClick={() => seek(10)} type="button">10<RotateCw size={14} /></button>
+        </div>
+        <button disabled={!playable} onClick={() => downloadUrl(attachment.name, attachment.dataUrl ?? "")} type="button">Download</button>
+      </div>
+    </div>
+  );
+}
+
 const searchMatchesCapture = (capture: Capture, query: string) => {
   const q = query.toLowerCase().trim();
   if (!q) return true;
@@ -2963,10 +3036,8 @@ function TaskCard({ capture, onOpen }: { capture: Capture; onOpen: () => void })
         {!isAudioTask && taskChecklist.length > 0 && <ChecklistBlock capture={capture} compact onChange={(items) => updateCapture(capture.id, { checklistItems: items, text: checklistTextFor(items) })} />}
         {taskAudio.length > 0 && <div className="task-audio-list">
           {taskAudio.map((attachment) => (
-            <VoiceNotePlayer
+            <TaskVoicePlayer
               attachment={attachment}
-              compact
-              minimal
               key={attachment.id}
               onRename={(title) => updateCapture(capture.id, { attachments: capture.attachments?.map((item) => item.id === attachment.id ? { ...item, title } : item) })}
             />
