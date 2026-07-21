@@ -321,8 +321,6 @@ button:disabled { cursor: progress; opacity: .7; }
 .task-card.task-audio-card .task-main { width: 100%; max-width: none; justify-self: stretch; align-self: stretch; }
 .task-title-row { min-width: 0; display: flex; align-items: center; gap: 10px; }
 .task-title-row h3 { min-width: 0; flex: 1 1 auto; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 17px; letter-spacing: 0; }
-.task-title-row .priority-pill { flex: 0 0 auto; min-height: 25px; padding: 6px 9px; border-radius: 999px; color: var(--priority-color); background: color-mix(in srgb, var(--priority-color) 14%, white); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--priority-color) 20%, transparent); font-size: 11px; font-weight: 900; }
-.task-audio-priority { justify-self: end; min-height: 25px; padding: 6px 9px; border-radius: 999px; color: var(--priority-color); background: color-mix(in srgb, var(--priority-color) 14%, white); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--priority-color) 20%, transparent); font-size: 11px; font-weight: 900; }
 .task-main p { display: -webkit-box; margin: 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 1; color: var(--muted); line-height: 1.4; font-size: 13px; font-weight: 720; }
 .task-card .checklist-block { max-width: min(520px, 100%); gap: 6px; margin: 2px 0 0; }
 .task-card .checklist-block .checklist-item { grid-template-columns: 20px minmax(0, 1fr); gap: 8px; min-height: 30px; padding: 6px 9px; border-radius: 11px; background: rgba(255,255,255,.58); }
@@ -379,9 +377,9 @@ button:disabled { cursor: progress; opacity: .7; }
 .task-meta span, .task-meta small { min-height: 24px; display: inline-flex; align-items: center; padding: 5px 8px; border-radius: 999px; font-size: 11px; font-weight: 850; }
 .task-meta span { color: var(--tag-color, var(--primary-deep)); background: var(--tag-bg, rgba(224,231,255,.62)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tag-color, var(--primary)) 18%, transparent); }
 .task-meta small { color: var(--muted); background: rgba(224,231,255,.42); }
+.task-meta .task-meta-priority { margin-left: auto; color: var(--priority-color); background: color-mix(in srgb, var(--priority-color) 14%, white); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--priority-color) 20%, transparent); font-weight: 900; }
 .task-schedule { grid-area: schedule; min-width: 124px; display: grid; justify-items: end; gap: 4px; text-align: right; }
 .task-audio-card .task-schedule { position: absolute; top: 24px; right: 18px; z-index: 2; min-width: 112px; }
-.task-audio-card .task-audio-priority { position: absolute; top: 24px; right: 154px; z-index: 3; }
 .task-schedule strong { color: var(--text); font-size: 13px; white-space: nowrap; }
 .task-schedule strong.overdue { color: #dc2626; }
 .task-audio-card .task-schedule strong { color: #dc2626; }
@@ -1560,7 +1558,6 @@ button:disabled { cursor: progress; opacity: .7; }
   .task-card { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "check main" "schedule schedule" "tags tags" "actions actions"; align-items: start; gap: 12px; padding: 14px; border-radius: 20px; }
   .task-card.task-audio-card { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "main" "schedule" "tags" "actions"; }
   .task-audio-card .task-schedule { position: static; justify-self: end; margin-top: -4px; }
-  .task-audio-card .task-audio-priority { position: static; justify-self: end; margin: 0 0 4px; }
   .task-check { width: 40px; height: 40px; }
   .task-title-row { align-items: flex-start; flex-direction: column; gap: 7px; }
   .task-title-row h3 { width: 100%; white-space: normal; line-height: 1.2; font-size: 16px; }

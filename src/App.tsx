@@ -3079,7 +3079,6 @@ function TaskCard({ capture, onOpen }: { capture: Capture; onOpen: () => void })
       <div className="task-main">
         {!isAudioTask && <div className="task-title-row">
           <h3>{capture.title}</h3>
-          {capture.priority && <span className="priority-pill" style={{ "--priority-color": priorityColor(capture.priority) } as React.CSSProperties}>{priorityLabel(capture.priority)}</span>}
         </div>}
         {!isAudioTask && taskBody && !taskChecklist.length && <p>{taskBody}</p>}
         {!isAudioTask && taskChecklist.length > 0 && <ChecklistBlock capture={capture} compact onChange={(items) => updateCapture(capture.id, { checklistItems: items, text: checklistTextFor(items) })} />}
@@ -3096,12 +3095,12 @@ function TaskCard({ capture, onOpen }: { capture: Capture; onOpen: () => void })
       <div className="task-meta">
         {tags.map((tag) => <span key={tag} style={tagChipStyle(tag, tagColors)}>{tag}</span>)}
         {showSourceLabel && <small>{sourceLabel}</small>}
+        {capture.priority && <span className="priority-pill task-meta-priority" style={{ "--priority-color": priorityColor(capture.priority) } as React.CSSProperties}>{priorityLabel(capture.priority)} priority</span>}
       </div>
       <div className="task-schedule">
         {dueLabel && <strong className={isOverdue ? "overdue" : ""}>{dueLabel}</strong>}
         {timeLabel && <span>{timeLabel}</span>}
       </div>
-      {isAudioTask && capture.priority && <span className="priority-pill task-audio-priority" style={{ "--priority-color": priorityColor(capture.priority) } as React.CSSProperties}>{priorityLabel(capture.priority)}</span>}
       <div className={`task-actions ${capture.deletedAt ? "trash-actions" : ""}`}>
         {capture.deletedAt ? <>
           <span className="trash-expiry">{trashExpiryLabel(capture)}</span>
