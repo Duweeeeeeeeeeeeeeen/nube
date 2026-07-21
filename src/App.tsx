@@ -2942,7 +2942,7 @@ function TaskCard({ capture, onOpen }: { capture: Capture; onOpen: () => void })
     </motion.article>
   );
   return (
-    <motion.article className={`task-card ${capture.completed ? "completed" : ""} ${pinned ? "starred" : ""}`} onClick={onOpen} whileHover={{ y: -2 }}>
+    <motion.article className={`task-card ${isAudioTask ? "task-audio-card" : ""} ${capture.completed ? "completed" : ""} ${pinned ? "starred" : ""}`} onClick={onOpen} whileHover={{ y: -2 }}>
       <button className="task-check" onClick={(event) => { event.stopPropagation(); updateCapture(capture.id, { completed: !capture.completed }); }} title={capture.completed ? "Reopen task" : "Complete task"}>
         <CheckCircle2 size={20} />
       </button>
@@ -2965,10 +2965,10 @@ function TaskCard({ capture, onOpen }: { capture: Capture; onOpen: () => void })
           ))}
         </div>}
         {missing.length > 0 && <button className="task-missing-chip" onClick={(event) => { event.stopPropagation(); onOpen(); }} title="Optional details can make this task easier to manage"><AlertTriangle size={13} />Missing {missing.join(" · ")}</button>}
-        <div className="task-meta">
+        {!isAudioTask && <div className="task-meta">
           {tags.map((tag) => <span key={tag} style={tagChipStyle(tag, tagColors)}>{tag}</span>)}
           {showSourceLabel && <small>{sourceLabel}</small>}
-        </div>
+        </div>}
       </div>
       <div className="task-schedule">
         {dueLabel && <strong className={isOverdue ? "overdue" : ""}>{dueLabel}</strong>}

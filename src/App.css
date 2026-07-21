@@ -308,7 +308,9 @@ button:disabled { cursor: progress; opacity: .7; }
 .cards { display: grid; gap: 16px; }
 .task-list { display: grid; gap: 12px; }
 .task-card { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "check main schedule" "actions actions actions"; align-items: start; gap: 14px; padding: 16px; border-radius: 22px; background: rgba(255,255,255,.74); border: 1px solid rgba(224,231,255,.92); box-shadow: 0 16px 34px rgba(70,72,212,.045); cursor: pointer; }
+.task-card.task-audio-card { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "check main" "actions actions"; gap: 14px 16px; padding: 18px; background: linear-gradient(145deg, rgba(240,253,250,.78), rgba(255,255,255,.72)); border-color: rgba(45,212,191,.28); }
 .task-card.starred { border-color: rgba(245,158,11,.36); background: linear-gradient(180deg, rgba(255,251,235,.78), rgba(255,255,255,.72)); }
+.task-card.task-audio-card.starred { background: linear-gradient(145deg, rgba(240,253,250,.76), rgba(255,251,235,.72)); }
 .task-card.completed { opacity: .62; }
 .task-card.completed h3 { text-decoration: line-through; }
 .task-check { grid-area: check; width: 42px; height: 42px; display: grid; place-items: center; margin-top: 4px; border-radius: 999px; color: #0f9f6e; background: rgba(209,250,229,.72); }
@@ -324,10 +326,15 @@ button:disabled { cursor: progress; opacity: .7; }
 .task-card .checklist-block button b { font-size: 12px; }
 .task-card .checklist-block small { padding: 4px 7px; font-size: 10px; }
 .task-audio-list { max-width: min(500px, 100%); display: grid; gap: 8px; margin-top: 0; }
+.task-audio-card .task-audio-list { max-width: 100%; }
 .task-audio-list .voice-player.compact { grid-template-columns: 36px minmax(0, 1fr); grid-template-areas: "play title" "play body"; align-items: center; column-gap: 10px; row-gap: 5px; margin: 0; padding: 8px 10px; border-radius: 16px; background: rgba(245,247,255,.66); border: 1px solid rgba(199,210,254,.72); box-shadow: inset 0 1px 0 rgba(255,255,255,.7); }
+.task-audio-card .voice-player.compact { grid-template-columns: 44px minmax(0, 1fr); padding: 12px 14px; border-radius: 20px; background: rgba(255,255,255,.72); border-color: rgba(165,180,252,.64); box-shadow: 0 14px 30px rgba(70,72,212,.045), inset 0 1px 0 rgba(255,255,255,.76); }
 .task-audio-list .voice-player.compact .voice-play { width: 36px; height: 36px; }
+.task-audio-card .voice-player.compact .voice-play { width: 44px; height: 44px; }
 .task-audio-list .voice-player.compact > .voice-title-row { min-height: 24px; }
 .task-audio-list .voice-player.compact > .voice-title-row b { font-size: 13px; }
+.task-audio-card .voice-player.compact > .voice-title-row { min-height: 32px; }
+.task-audio-card .voice-player.compact > .voice-title-row b { font-size: 15px; }
 .task-audio-list .voice-player.compact .voice-title-edit { width: 22px; height: 22px; min-height: 22px; }
 .task-audio-list .voice-player.compact .voice-progress-rail { height: 7px; min-height: 7px; }
 .task-audio-list .voice-player.compact .voice-body { gap: 6px; }
@@ -336,6 +343,10 @@ button:disabled { cursor: progress; opacity: .7; }
 .task-audio-list .voice-controls button { min-height: 24px; padding: 4px 7px; font-size: 10px; }
 .task-audio-list .voice-controls > div:first-of-type { grid-column: 2; }
 .task-audio-list .voice-controls > div:last-child { grid-column: 3; }
+.task-audio-card .voice-controls { grid-template-columns: auto auto 1fr; }
+.task-audio-card .voice-controls button { background: rgba(248,250,252,.78); }
+.task-audio-card .task-missing-chip { margin-top: 2px; }
+.task-audio-card .task-actions { margin-top: 0; }
 .task-missing-chip { width: fit-content; min-height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 9px; border-radius: 999px; color: #b45309; background: rgba(255,247,237,.84); box-shadow: inset 0 0 0 1px rgba(251,146,60,.28); font-size: 11px; font-weight: 900; }
 .task-missing-chip svg { flex: 0 0 auto; }
 .task-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; min-width: 0; }
