@@ -2547,10 +2547,13 @@ function InboxView() {
   const taskCaptures = orderedFiltered
     .filter((capture) => capture.type === "Actionable" || Boolean(capture.due))
     .sort((a, b) => {
-      if (a.completed !== b.completed) return a.completed ? 1 : -1;
       const aPinned = isPinnedCapture(a);
       const bPinned = isPinnedCapture(b);
       if (aPinned !== bPinned) return aPinned ? -1 : 1;
+      if (a.completed !== b.completed) return a.completed ? 1 : -1;
+      const aDue = a.due ? parseDueDate(a.due).getTime() : Number.POSITIVE_INFINITY;
+      const bDue = b.due ? parseDueDate(b.due).getTime() : Number.POSITIVE_INFINITY;
+      if (aDue !== bDue) return aDue - bDue;
       return priorityScore(b.priority) - priorityScore(a.priority);
     });
   const activeFilterCount = [tagFilter, typeFilter !== "All", priorityFilter !== "All", starFilter !== "All", assetFilter !== "All", moneyFilter !== "All", statusFilter !== "All", collectionFilter, dateFilter].filter(Boolean).length;
@@ -2897,6 +2900,7 @@ function TaskCard({ capture, onOpen }: { capture: Capture; onOpen: () => void })
   const taskBody = captureBodyText(capture);
   const sourceLabel = capture.source ? capture.source.replace(/\b\w/g, (letter) => letter.toUpperCase()) : "";
   const showSourceLabel = Boolean(sourceLabel && !tags.some((tag) => tag.toLowerCase() === sourceLabel.toLowerCase()));
+  const isAudioTask = taskAudio.length > 0;
   const pinned = isPinnedCapture(capture);
   const locked = !isCaptureUnlocked(capture);
   const due = capture.due ? parseDueDate(capture.due) : null;
@@ -2931,12 +2935,12 @@ function TaskCard({ capture, onOpen }: { capture: Capture; onOpen: () => void })
         <CheckCircle2 size={20} />
       </button>
       <div className="task-main">
-        <div className="task-title-row">
+        {!isAudioTask && <div className="task-title-row">
           <h3>{capture.title}</h3>
           {capture.priority && <span className="priority-pill" style={{ "--priority-color": priorityColor(capture.priority) } as React.CSSProperties}>{priorityLabel(capture.priority)}</span>}
-        </div>
-        {taskBody && !taskChecklist.length && <p>{taskBody}</p>}
-        {taskChecklist.length > 0 && <ChecklistBlock capture={capture} compact onChange={(items) => updateCapture(capture.id, { checklistItems: items, text: checklistTextFor(items) })} />}
+        </div>}
+        {!isAudioTask && taskBody && !taskChecklist.length && <p>{taskBody}</p>}
+        {!isAudioTask && taskChecklist.length > 0 && <ChecklistBlock capture={capture} compact onChange={(items) => updateCapture(capture.id, { checklistItems: items, text: checklistTextFor(items) })} />}
         {taskAudio.length > 0 && <div className="task-audio-list">
           {taskAudio.map((attachment) => (
             <VoiceNotePlayer
@@ -3095,7 +3099,7 @@ function DetailModal({ capture }: { capture: Capture }) {
   return (
     <div className="modal-backdrop" onClick={() => setSelectedCapture(null)}>
       <motion.section className="detail-modal" onClick={(e) => e.stopPropagation()} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 18 }}>
-        <header className="detail-header"><div><p className="eyebrow">{capture.type} capture</p><input className="detail-title-input" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} /></div><div className="detail-header-actions"><button className={draft.starred ? "active" : ""} onClick={() => setDraft({ ...draft, starred: !draft.starred })}><Star size={18} fill={draft.starred ? "currentColor" : "none"} /></button><button className={draft.private ? "active private-active" : ""} disabled={savingDetail} onClick={() => { if (draft.private) setDraft({ ...draft, private: false }); else void lockDetailNow(); }} title={draft.private ? "Make visible" : "Lock capture"}><Lock size={18} /></button><button onClick={() => setSelectedCapture(null)}><X size={20} /></button></div></header>
+        <header className="detail-header"><div><p className="eyebrow">{capture.type} capture</p><input className="detail-title-input" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} /></div><div className="detail-header-actions"><button className={draft.starred ? "active" : ""} onClick={() => { const nextStarred = !draft.starred; setDraft({ ...draft, starred: nextStarred }); updateCapture(capture.id, { starred: nextStarred }); }}><Star size={18} fill={draft.starred ? "currentColor" : "none"} /></button><button className={draft.private ? "active private-active" : ""} disabled={savingDetail} onClick={() => { if (draft.private) setDraft({ ...draft, private: false }); else void lockDetailNow(); }} title={draft.private ? "Make visible" : "Lock capture"}><Lock size={18} /></button><button onClick={() => setSelectedCapture(null)}><X size={20} /></button></div></header>
         <div className="detail-edit-grid">
           <OptionPicker label="Type" value={draft.type} options={collectionOrder} onChange={(type) => setDraft({ ...draft, type })} />
           <div className="date-priority-row">
