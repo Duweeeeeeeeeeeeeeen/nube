@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nube Responsive Preview</title>
+    <style>
+      :root {
+        --surface: #f9f9ff;
+        --card: rgba(255, 255, 255, 0.82);
+        --line: #dfe4ff;
+        --primary: #6366f1;
+        --text: #111c2d;
+        --muted: #5f6475;
+        font-family: Geist, Inter, ui-sans-serif, system-ui, sans-serif;
+        color: var(--text);
+        background: radial-gradient(circle at 50% -10%, rgba(99, 102, 241, 0.14), transparent 36%), var(--surface);
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; min-width: 320px; }
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 18px 24px;
+        background: rgba(249, 249, 255, 0.82);
+        border-bottom: 1px solid rgba(199, 210, 254, 0.72);
+      }
+      h1 { margin: 0; font-size: 24px; letter-spacing: 0; }
+      p { margin: 4px 0 0; color: var(--muted); font-weight: 650; }
+      .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+      button, a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 38px;
+        padding: 9px 13px;
+        border: 0;
+        border-radius: 999px;
+        color: #4648d4;
+        background: rgba(224, 231, 255, 0.78);
+        font: inherit;
+        font-weight: 850;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      main { display: grid; gap: 26px; padding: 28px; }
+      .device-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+        gap: 26px;
+        align-items: start;
+      }
+      .device {
+        display: grid;
+        gap: 12px;
+        padding: 16px;
+        border-radius: 28px;
+        background: var(--card);
+        border: 1px solid var(--line);
+        box-shadow: 0 24px 60px rgba(70, 72, 212, 0.08);
+      }
+      .device-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .device-head h2 { margin: 0; font-size: 18px; }
+      .device-head span { color: var(--muted); font-size: 12px; font-weight: 850; }
+      .device-meta { display: flex; align-items: center; gap: 8px; }
+      .device-meta button { min-height: 32px; padding: 7px 10px; font-size: 12px; }
+      .frame-wrap {
+        position: relative;
+        width: 100%;
+        height: calc((820px * var(--scale)) + 28px);
+        overflow: hidden;
+        padding: 0;
+        border-radius: 22px;
+        background: linear-gradient(135deg, rgba(224,231,255,.54), rgba(255,255,255,.72));
+        border: 1px solid rgba(199, 210, 254, 0.68);
+      }
+      .frame-stage {
+        position: absolute;
+        top: 14px;
+        left: 50%;
+        width: calc(var(--device-width) * 1px);
+        height: 820px;
+        transform: translateX(-50%) scale(var(--scale));
+        transform-origin: top center;
+      }
+      iframe {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border: 0;
+        border-radius: 18px;
+        background: white;
+        box-shadow: 0 18px 46px rgba(17, 24, 39, 0.14);
+      }
+      .phone { --device-width: 390; --scale: .78; }
+      .large-phone { --device-width: 430; --scale: .72; }
+      .tablet { --device-width: 768; --scale: .43; }
+      .tablet-wide { --device-width: 1024; --scale: .33; }
+      .laptop { --device-width: 1366; --scale: .25; }
+      .desktop { --device-width: 1440; --scale: .24; }
+      .preview-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        display: none;
+        grid-template-rows: auto 1fr;
+        gap: 14px;
+        padding: 18px;
+        background: rgba(15, 23, 42, 0.62);
+        backdrop-filter: blur(18px);
+      }
+      .preview-modal.open { display: grid; }
+      .preview-modal-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 14px;
+        border-radius: 22px;
+        background: rgba(249, 249, 255, 0.92);
+        border: 1px solid rgba(224, 231, 255, 0.88);
+        box-shadow: 0 18px 44px rgba(15, 23, 42, 0.16);
+      }
+      .preview-modal-title h2 { margin: 0; font-size: 18px; }
+      .preview-modal-title p { margin: 2px 0 0; font-size: 13px; }
+      .preview-modal-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+      .preview-modal-body {
+        position: relative;
+        overflow: auto;
+        border-radius: 28px;
+        background: radial-gradient(circle at 50% 0%, rgba(224, 231, 255, .42), transparent 44%), rgba(249, 249, 255, 0.76);
+        border: 1px solid rgba(224, 231, 255, 0.72);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.72), 0 28px 80px rgba(15, 23, 42, 0.2);
+      }
+      .preview-modal-stage {
+        position: absolute;
+        top: 24px;
+        left: 50%;
+        width: calc(var(--modal-device-width) * 1px);
+        height: 820px;
+        transform: translateX(-50%) scale(var(--modal-scale));
+        transform-origin: top center;
+      }
+      .preview-modal-stage iframe {
+        width: 100%;
+        height: 100%;
+        border-radius: 24px;
+      }
+      .notes {
+        display: grid;
+        gap: 10px;
+        padding: 18px;
+        border-radius: 24px;
+        background: rgba(255,255,255,.72);
+        border: 1px solid var(--line);
+      }
+      .notes b { color: var(--primary); }
+      @media (max-width: 720px) {
+        header { align-items: flex-start; flex-direction: column; }
+        main { padding: 18px; }
+        .device-grid { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>Nube Responsive Preview</h1>
+        <p>Check the same app across common phone, tablet, laptop, and desktop widths.</p>
+      </div>
+      <div class="actions">
+        <button onclick="for (const frame of document.querySelectorAll('iframe')) frame.contentWindow?.location.reload()">Reload frames</button>
+        <a href="/" target="_blank" rel="noreferrer">Open Nube</a>
+      </div>
+    </header>
+    <main>
+      <section class="notes">
+        <span><b>How to use it:</b> scroll each device frame and look for clipped text, overlapping sidebars, broken cards, or controls that become too small.</span>
+        <span><b>Tip:</b> if the welcome screen appears, continue locally once inside a frame. Same-origin storage should keep the choice for the other previews.</span>
+      </section>
+      <section class="device-grid">
+        <article class="device phone"><div class="device-head"><h2>iPhone compact</h2><div class="device-meta"><span>390 x 820</span><button onclick="openPreview('iPhone compact', 390, 820)">View large</button></div></div><div class="frame-wrap"><div class="frame-stage"><iframe src="/"></iframe></div></div></article>
+        <article class="device large-phone"><div class="device-head"><h2>Large phone</h2><div class="device-meta"><span>430 x 820</span><button onclick="openPreview('Large phone', 430, 820)">View large</button></div></div><div class="frame-wrap"><div class="frame-stage"><iframe src="/"></iframe></div></div></article>
+        <article class="device tablet"><div class="device-head"><h2>Tablet portrait</h2><div class="device-meta"><span>768 x 820</span><button onclick="openPreview('Tablet portrait', 768, 820)">View large</button></div></div><div class="frame-wrap"><div class="frame-stage"><iframe src="/"></iframe></div></div></article>
+        <article class="device tablet-wide"><div class="device-head"><h2>Tablet landscape</h2><div class="device-meta"><span>1024 x 820</span><button onclick="openPreview('Tablet landscape', 1024, 820)">View large</button></div></div><div class="frame-wrap"><div class="frame-stage"><iframe src="/"></iframe></div></div></article>
+        <article class="device laptop"><div class="device-head"><h2>Laptop</h2><div class="device-meta"><span>1366 x 820</span><button onclick="openPreview('Laptop', 1366, 820)">View large</button></div></div><div class="frame-wrap"><div class="frame-stage"><iframe src="/"></iframe></div></div></article>
+        <article class="device desktop"><div class="device-head"><h2>Desktop</h2><div class="device-meta"><span>1440 x 820</span><button onclick="openPreview('Desktop', 1440, 820)">View large</button></div></div><div class="frame-wrap"><div class="frame-stage"><iframe src="/"></iframe></div></div></article>
+      </section>
+    </main>
+    <section id="previewModal" class="preview-modal" aria-hidden="true">
+      <div class="preview-modal-head">
+        <div class="preview-modal-title">
+          <h2 id="previewTitle">Device preview</h2>
+          <p id="previewSize">390 x 820</p>
+        </div>
+        <div class="preview-modal-actions">
+          <button onclick="reloadPreview()">Reload</button>
+          <button onclick="closePreview()">Close</button>
+        </div>
+      </div>
+      <div id="previewBody" class="preview-modal-body">
+        <div id="previewStage" class="preview-modal-stage">
+          <iframe id="previewFrame" src="/"></iframe>
+        </div>
+      </div>
+    </section>
+    <script>
+      const modal = document.getElementById("previewModal");
+      const title = document.getElementById("previewTitle");
+      const size = document.getElementById("previewSize");
+      const body = document.getElementById("previewBody");
+      const stage = document.getElementById("previewStage");
+      const frame = document.getElementById("previewFrame");
+      let activePreview = { label: "iPhone compact", width: 390, height: 820 };
+
+      function fitPreview() {
+        const availableWidth = Math.max(320, body.clientWidth - 48);
+        const availableHeight = Math.max(320, body.clientHeight - 48);
+        const scale = Math.min(1.25, availableWidth / activePreview.width, availableHeight / activePreview.height);
+        modal.style.setProperty("--modal-device-width", activePreview.width);
+        modal.style.setProperty("--modal-scale", scale.toFixed(3));
+        body.style.minHeight = `${Math.ceil(activePreview.height * scale) + 48}px`;
+      }
+
+      function openPreview(label, width, height) {
+        activePreview = { label, width, height };
+        title.textContent = label;
+        size.textContent = `${width} x ${height}`;
+        frame.src = "/";
+        modal.classList.add("open");
+        modal.setAttribute("aria-hidden", "false");
+        document.body.style.overflow = "hidden";
+        requestAnimationFrame(fitPreview);
+      }
+
+      function closePreview() {
+        modal.classList.remove("open");
+        modal.setAttribute("aria-hidden", "true");
+        document.body.style.overflow = "";
+      }
+
+      function reloadPreview() {
+        frame.contentWindow?.location.reload();
+      }
+
+      window.addEventListener("resize", () => {
+        if (modal.classList.contains("open")) fitPreview();
+      });
+      window.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && modal.classList.contains("open")) closePreview();
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nube Capture</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <span class="logo"><img src="icons/icon32.png" alt="" /></span>
+        <div>
+          <h1>Nube</h1>
+          <p>Drop it in. Find it later.</p>
+        </div>
+      </header>
+
+      <section class="settings">
+        <label>
+          Connection
+          <select id="authMode">
+            <option value="session">Account session</option>
+            <option value="token">Fallback token</option>
+          </select>
+        </label>
+        <label>
+          Endpoint
+          <input id="endpoint" spellcheck="false" />
+        </label>
+        <label>
+          Fallback token
+          <input id="token" type="password" spellcheck="false" placeholder="nube_..." />
+        </label>
+        <p id="accountStatus" class="account-status">Checking Nube session...</p>
+        <button id="saveSettings" class="secondary">Save settings</button>
+      </section>
+
+      <section class="capture">
+        <div class="mode-row" aria-label="Capture mode">
+          <button id="modeNote" class="mode active" type="button">Note</button>
+          <button id="modePage" class="mode" type="button">Page</button>
+          <button id="modeSelection" class="mode" type="button">Selection</button>
+        </div>
+        <textarea id="note" rows="4" placeholder="Write a note, task, place, reminder, or anything to remember..."></textarea>
+        <div class="template-row" aria-label="Quick templates">
+          <button class="chip active" type="button" data-template="auto">Auto</button>
+          <button class="chip" type="button" data-template="task">Task</button>
+          <button class="chip" type="button" data-template="idea">Idea</button>
+          <button class="chip" type="button" data-template="expense">Expense</button>
+          <button class="chip" type="button" data-template="place">Place</button>
+          <button class="chip" type="button" data-template="document">Doc</button>
+        </div>
+        <div class="control-grid">
+          <label>
+            When
+            <select id="duePreset">
+              <option value="">No date</option>
+              <option value="today">Today</option>
+              <option value="tomorrow">Tomorrow</option>
+              <option value="weekend">This weekend</option>
+            </select>
+          </label>
+          <label>
+            Priority
+            <select id="priority">
+              <option>Medium</option>
+              <option>Low</option>
+              <option>High</option>
+            </select>
+          </label>
+          <label class="star-toggle">
+            <input id="starred" type="checkbox" />
+            <span>Star</span>
+          </label>
+        </div>
+        <label class="inline-toggle">
+          <input id="includePage" type="checkbox" />
+          <span>Include current page</span>
+        </label>
+        <label class="inline-toggle">
+          <input id="fullArticle" type="checkbox" />
+          <span>Save readable page text</span>
+        </label>
+        <label class="file-drop">
+          <input id="files" type="file" accept="image/*,.pdf,.txt,.md,.doc,.docx" multiple />
+          <span>Add images or files</span>
+          <small id="fileSummary">No attachments</small>
+        </label>
+        <button id="captureScreenshot" class="wide-secondary" type="button">Add screenshot</button>
+        <div class="actions">
+          <button id="saveCapture">Save capture</button>
+          <button id="clearCapture" class="secondary" type="button">Clear</button>
+        </div>
+      </section>
+
+      <p id="status" class="status">Ready.</p>
+      <section class="recent">
+        <div class="recent-head">
+          <strong>Recent</strong>
+          <button id="openNube" class="text-button" type="button">Open Nube</button>
+        </div>
+        <div id="recentList" class="recent-list">
+          <p>Loading recent captures...</p>
+        </div>
+      </section>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>
