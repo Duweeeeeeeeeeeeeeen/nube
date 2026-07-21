@@ -84,6 +84,7 @@ type Capture = {
   createdAt: string;
   completed?: boolean;
   archived?: boolean;
+  deletedAt?: string;
   checklistItems?: ChecklistItem[];
   private?: boolean;
   privateEncryptedData?: PrivateEncryptedData;
@@ -1638,6 +1639,9 @@ function App() {
     const next = capture.id === id ? { ...capture, ...patch } : capture;
     return patch.metadata ? { ...next, metadata: visibleCaptureTags(patch.metadata) } : next;
   }));
+  const trashCapture = (capture: Capture) => updateCapture(capture.id, { deletedAt: new Date().toISOString(), archived: false });
+  const restoreCapture = (capture: Capture) => updateCapture(capture.id, { deletedAt: undefined });
+  const deleteCaptureForever = (capture: Capture) => setCaptures((current) => current.filter((item) => item.id !== capture.id));
   const isCaptureUnlocked = (capture: Capture) => !capture.private || unlockedPrivateIds.has(capture.id);
   const unlockCapture = (capture: Capture, onSuccess?: () => void) => {
     if (!capture.private) return true;
@@ -1776,7 +1780,7 @@ function App() {
     setLocalMode(true);
     setWelcomePreview(false);
   };
-  const appState = { captures, setCaptures, updateCapture, addCapture, setSelectedCapture, setPreviewImage, setView, setInsightsOpen, collectionFilter, setCollectionFilter, dateFilter, setDateFilter, profile, setProfile, authUser, setAuthUser, googleConfigured, tagColors, setTagColors, aiReview, pluginSettings, setPluginSettings, syncStatus, privatePinHash, setPrivatePinHash, setPrivateSessionPin, setPrivatePin, isCaptureUnlocked, unlockCapture, lockCapture };
+  const appState = { captures, setCaptures, updateCapture, trashCapture, restoreCapture, deleteCaptureForever, addCapture, setSelectedCapture, setPreviewImage, setView, setInsightsOpen, collectionFilter, setCollectionFilter, dateFilter, setDateFilter, profile, setProfile, authUser, setAuthUser, googleConfigured, tagColors, setTagColors, aiReview, pluginSettings, setPluginSettings, syncStatus, privatePinHash, setPrivatePinHash, setPrivateSessionPin, setPrivatePin, isCaptureUnlocked, unlockCapture, lockCapture };
   const Screen = view === "Collections" ? CollectionsView : view === "Settings" ? SettingsView : view === "Upgrade" ? UpgradeView : InboxView;
 
   if (!authChecked) return <AuthSplash loading googleConfigured={googleConfigured} onContinueLocally={continueLocally} />;
@@ -1851,6 +1855,9 @@ const BrainContext = React.createContext<{
   captures: Capture[];
   setCaptures: React.Dispatch<React.SetStateAction<Capture[]>>;
   updateCapture: (id: number, patch: Partial<Capture>) => void;
+  trashCapture: (capture: Capture) => void;
+  restoreCapture: (capture: Capture) => void;
+  deleteCaptureForever: (capture: Capture) => void;
   addCapture: (text: string, source?: string, overrides?: Partial<Capture>) => Promise<number>;
   setSelectedCapture: (capture: Capture | null) => void;
   setPreviewImage: (image: { src: string; alt: string } | null) => void;
@@ -2003,7 +2010,7 @@ function InboxView() {
   const [starFilter, setStarFilter] = React.useState<"All" | "Starred">("All");
   const [assetFilter, setAssetFilter] = React.useState<"All" | "Images" | "Files" | "Audio" | "Places" | "Links">("All");
   const [moneyFilter, setMoneyFilter] = React.useState<"All" | "Income" | "Expenses">("All");
-  const [statusFilter, setStatusFilter] = React.useState<"All" | "Open" | "Done" | "Archived">("All");
+  const [statusFilter, setStatusFilter] = React.useState<"All" | "Open" | "Done" | "Archived" | "Trash">("All");
   const [uploadStatus, setUploadStatus] = React.useState<string | null>(null);
   const [moneyExpanded, setMoneyExpanded] = React.useState(false);
   const [isCreating, setIsCreating] = React.useState(false);
@@ -2421,9 +2428,10 @@ function InboxView() {
     const matchesAsset = assetFilter === "All" || (assetFilter === "Images" && Boolean(capture.imageUrl)) || (assetFilter === "Files" && Boolean(capture.attachmentName)) || (assetFilter === "Audio" && audioAttachmentsFor(capture).length > 0) || (assetFilter === "Places" && capture.type === "Place") || (assetFilter === "Links" && capture.type === "Link");
     const signal = moneySignals.find((item) => item.id === capture.id);
     const matchesMoney = moneyFilter === "All" || (moneyFilter === "Income" && signal?.direction === "income") || (moneyFilter === "Expenses" && signal?.direction === "expense");
+    const matchesDeleted = statusFilter === "Trash" ? Boolean(capture.deletedAt) : !capture.deletedAt;
     const matchesArchive = statusFilter === "Archived" ? Boolean(capture.archived) : !capture.archived;
-    const matchesStatus = statusFilter === "All" || (statusFilter === "Open" && capture.type === "Actionable" && !capture.completed) || (statusFilter === "Done" && Boolean(capture.completed)) || statusFilter === "Archived";
-    return matchesArchive && matchesCollection && matchesDate && matchesType && matchesPriority && matchesStar && matchesAsset && matchesMoney && matchesStatus && (!tagFilter || visibleCaptureTags(capture.metadata).includes(tagFilter)) && (mode === "capture" || searchMatchesCapture(capture, draft));
+    const matchesStatus = statusFilter === "All" || (statusFilter === "Open" && capture.type === "Actionable" && !capture.completed) || (statusFilter === "Done" && Boolean(capture.completed)) || statusFilter === "Archived" || statusFilter === "Trash";
+    return matchesDeleted && matchesArchive && matchesCollection && matchesDate && matchesType && matchesPriority && matchesStar && matchesAsset && matchesMoney && matchesStatus && (!tagFilter || visibleCaptureTags(capture.metadata).includes(tagFilter)) && (mode === "capture" || searchMatchesCapture(capture, draft));
   });
   const orderedFiltered = rankCaptures(filtered);
   const taskCaptures = orderedFiltered
@@ -2437,7 +2445,7 @@ function InboxView() {
     });
   const activeFilterCount = [tagFilter, typeFilter !== "All", priorityFilter !== "All", starFilter !== "All", assetFilter !== "All", moneyFilter !== "All", statusFilter !== "All", collectionFilter, dateFilter].filter(Boolean).length;
   const todayKey = dateKey(new Date());
-  const captureSectionTitle = mode === "search" ? "Search results" : dateFilter?.day === todayKey ? "Today" : dateFilter ? "Scheduled captures" : "Recent captures";
+  const captureSectionTitle = statusFilter === "Trash" ? "Trash" : mode === "search" ? "Search results" : dateFilter?.day === todayKey ? "Today" : dateFilter ? "Scheduled captures" : "Recent captures";
   const visibleList = listMode === "tasks" ? taskCaptures : orderedFiltered;
   const visibleSectionTitle = listMode === "tasks" ? "Tasks" : captureSectionTitle;
   const recordingBars = activeVoiceMode === "audio-only" ? voiceLevels : voiceLevels.slice(0, 7);
@@ -2448,6 +2456,12 @@ function InboxView() {
     window.setTimeout(() => input.current?.focus(), 0);
   };
   const emptyState = (() => {
+    if (statusFilter === "Trash") {
+      return {
+        title: "Trash is empty",
+        text: "Deleted captures and tasks will stay here until you restore them or delete them forever.",
+      };
+    }
     if (dateFilter) {
       return {
         title: dateFilter.day === todayKey ? "Nothing scheduled for today" : "Nothing scheduled here",
@@ -2582,7 +2596,7 @@ function InboxView() {
         <OptionPicker label="Priority" value={priorityFilter} options={["All", "Low", "Medium", "High"]} onChange={setPriorityFilter} formatLabel={(value) => value === "Medium" ? "Med" : value} />
         <OptionPicker label="Assets" value={assetFilter} options={["All", "Images", "Files", "Audio", "Places", "Links"]} onChange={setAssetFilter} />
         <OptionPicker label="Money" value={moneyFilter} options={["All", "Income", "Expenses"]} onChange={setMoneyFilter} />
-        <OptionPicker label="Status" value={statusFilter} options={["All", "Open", "Done", "Archived"]} onChange={setStatusFilter} />
+        <OptionPicker label="Status" value={statusFilter} options={["All", "Open", "Done", "Archived", "Trash"]} onChange={setStatusFilter} />
         <NubeDatePicker label="Date" value={dateFilter?.day ?? ""} onChange={(value) => setDateFilter(value ? { day: value, label: new Date(`${value}T12:00:00`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" }) } : null)} />
         <div className="filter-tags"><span>Tags</span><button className={!tagFilter ? "active" : ""} onClick={() => setTagFilter(null)}>All</button>{allTags.map((tag, index) => <button key={`${tag}-${index}`} className={tagFilter === tag ? "active" : ""} style={tagChipStyle(tag, tagColors)} onClick={() => setTagFilter(tagFilter === tag ? null : tag)}>{tag}</button>)}</div>
       </div>}
@@ -2666,7 +2680,7 @@ function ChecklistBlock({ capture, compact = false, onChange }: { capture: Captu
 }
 
 function SmartCard({ capture, onOpen }: { capture: Capture; onOpen: () => void }) {
-  const { updateCapture, setCaptures, setPreviewImage, isCaptureUnlocked, unlockCapture, lockCapture } = useBrain();
+  const { updateCapture, trashCapture, restoreCapture, deleteCaptureForever, setPreviewImage, isCaptureUnlocked, unlockCapture, lockCapture } = useBrain();
   const Icon = iconForType(capture.type);
   const locked = !isCaptureUnlocked(capture);
   const image = capture.place?.photoUrl ?? placeImageFor(capture);
@@ -2685,7 +2699,7 @@ function SmartCard({ capture, onOpen }: { capture: Capture; onOpen: () => void }
       <p>This capture is hidden. Unlock it with your Private PIN to view its content.</p>
       <div className="card-actions">
         <button className="icon-action lock-action" onClick={(event) => { event.stopPropagation(); if (unlockCapture(capture)) onOpen(); }} title="Unlock" aria-label="Unlock"><Lock size={16} /></button>
-        <button className="icon-action danger-action" onClick={(event) => { event.stopPropagation(); unlockCapture(capture, () => setCaptures((current) => current.filter((item) => item.id !== capture.id))); }} title="Delete" aria-label="Delete"><Trash2 size={16} /></button>
+        <button className="icon-action danger-action" onClick={(event) => { event.stopPropagation(); unlockCapture(capture, () => trashCapture(capture)); }} title="Move to trash" aria-label="Move to trash"><Trash2 size={16} /></button>
       </div>
     </motion.article>
   );
@@ -2747,18 +2761,23 @@ function SmartCard({ capture, onOpen }: { capture: Capture; onOpen: () => void }
       <div className="card-actions">
         <button className={`icon-action star-action ${capture.starred ? "active" : ""}`} onClick={(e) => { e.stopPropagation(); updateCapture(capture.id, { starred: !capture.starred }); }} title={capture.starred ? "Remove star" : "Star"} aria-label={capture.starred ? "Remove star" : "Star"}><Star size={16} fill={capture.starred ? "currentColor" : "none"} /></button>
         <button className="icon-action lock-action" onClick={(e) => { e.stopPropagation(); void lockCapture(capture); }} title="Lock" aria-label="Lock"><Lock size={16} /></button>
-        <button className={`icon-action archive-action ${capture.archived ? "active" : ""}`} onClick={(e) => { e.stopPropagation(); updateCapture(capture.id, { archived: !capture.archived }); }} title={capture.archived ? "Restore from archive" : "Archive"} aria-label={capture.archived ? "Restore from archive" : "Archive"}><Archive size={16} /></button>
-        {capture.type === "Actionable" && !isVoiceCapture && <button className="icon-action done-action" onClick={(e) => { e.stopPropagation(); updateCapture(capture.id, { completed: !capture.completed }); }} title={capture.completed ? "Reopen" : "Mark done"} aria-label={capture.completed ? "Reopen" : "Mark done"}><CheckCircle2 size={16} /></button>}
-        {capture.type === "Actionable" && !isVoiceCapture && <button className="icon-action calendar-action" onClick={(e) => { e.stopPropagation(); snooze(1); }} title="Move to tomorrow" aria-label="Move to tomorrow"><CalendarCheck size={16} /></button>}
-        {capture.type === "Actionable" && !isVoiceCapture && <button className="icon-action export-action" onClick={(e) => { e.stopPropagation(); exportCaptureIcs(capture); }} title="Export .ics" aria-label="Export .ics"><ExternalLink size={16} /></button>}
-        <button className="icon-action danger-action" onClick={(e) => { e.stopPropagation(); setCaptures((current) => current.filter((item) => item.id !== capture.id)); }} title="Delete" aria-label="Delete"><Trash2 size={16} /></button>
+        {capture.deletedAt ? <>
+          <button className="icon-action archive-action active" onClick={(e) => { e.stopPropagation(); restoreCapture(capture); }} title="Restore" aria-label="Restore"><RotateCcw size={16} /></button>
+          <button className="icon-action danger-action" onClick={(e) => { e.stopPropagation(); deleteCaptureForever(capture); }} title="Delete forever" aria-label="Delete forever"><Trash2 size={16} /></button>
+        </> : <>
+          <button className={`icon-action archive-action ${capture.archived ? "active" : ""}`} onClick={(e) => { e.stopPropagation(); updateCapture(capture.id, { archived: !capture.archived }); }} title={capture.archived ? "Restore from archive" : "Archive"} aria-label={capture.archived ? "Restore from archive" : "Archive"}><Archive size={16} /></button>
+          {capture.type === "Actionable" && !isVoiceCapture && <button className="icon-action done-action" onClick={(e) => { e.stopPropagation(); updateCapture(capture.id, { completed: !capture.completed }); }} title={capture.completed ? "Reopen" : "Mark done"} aria-label={capture.completed ? "Reopen" : "Mark done"}><CheckCircle2 size={16} /></button>}
+          {capture.type === "Actionable" && !isVoiceCapture && <button className="icon-action calendar-action" onClick={(e) => { e.stopPropagation(); snooze(1); }} title="Move to tomorrow" aria-label="Move to tomorrow"><CalendarCheck size={16} /></button>}
+          {capture.type === "Actionable" && !isVoiceCapture && <button className="icon-action export-action" onClick={(e) => { e.stopPropagation(); exportCaptureIcs(capture); }} title="Export .ics" aria-label="Export .ics"><ExternalLink size={16} /></button>}
+          <button className="icon-action danger-action" onClick={(e) => { e.stopPropagation(); trashCapture(capture); }} title="Move to trash" aria-label="Move to trash"><Trash2 size={16} /></button>
+        </>}
       </div>
     </motion.article>
   );
 }
 
 function TaskCard({ capture, onOpen }: { capture: Capture; onOpen: () => void }) {
-  const { updateCapture, setCaptures, tagColors, isCaptureUnlocked, unlockCapture } = useBrain();
+  const { updateCapture, trashCapture, restoreCapture, deleteCaptureForever, tagColors, isCaptureUnlocked, unlockCapture } = useBrain();
   const tags = visibleCaptureTags(capture.metadata).slice(0, 2);
   const taskAudio = audioAttachmentsFor(capture);
   const pinned = isPinnedCapture(capture);
@@ -2784,7 +2803,7 @@ function TaskCard({ capture, onOpen }: { capture: Capture; onOpen: () => void })
         <strong>Locked</strong>
         <div>
           <button className="icon-action lock-action" onClick={(event) => { event.stopPropagation(); unlockCapture(capture); }} title="Unlock task" aria-label="Unlock task"><Lock size={15} /></button>
-          <button className="icon-action danger-action" onClick={(event) => { event.stopPropagation(); unlockCapture(capture, () => setCaptures((current) => current.filter((item) => item.id !== capture.id))); }} title="Delete task" aria-label="Delete task"><Trash2 size={15} /></button>
+          <button className="icon-action danger-action" onClick={(event) => { event.stopPropagation(); unlockCapture(capture, () => trashCapture(capture)); }} title="Move task to trash" aria-label="Move task to trash"><Trash2 size={15} /></button>
         </div>
       </div>
     </motion.article>
@@ -2812,8 +2831,13 @@ function TaskCard({ capture, onOpen }: { capture: Capture; onOpen: () => void })
         <span className={!hasTimeWindow ? "missing" : ""}>{timeLabel}</span>
         <div>
           <button className={`icon-action star-action ${pinned ? "active" : ""}`} onClick={(event) => { event.stopPropagation(); updateCapture(capture.id, { starred: !pinned }); }} title={pinned ? "Remove star" : "Star task"} aria-label={pinned ? "Remove star" : "Star task"}><Star size={15} fill={pinned ? "currentColor" : "none"} /></button>
-          <button className={`icon-action archive-action ${capture.archived ? "active" : ""}`} onClick={(event) => { event.stopPropagation(); updateCapture(capture.id, { archived: !capture.archived }); }} title={capture.archived ? "Restore from archive" : "Archive task"} aria-label={capture.archived ? "Restore from archive" : "Archive task"}><Archive size={15} /></button>
-          <button className="icon-action danger-action" onClick={(event) => { event.stopPropagation(); setCaptures((current) => current.filter((item) => item.id !== capture.id)); }} title="Delete task" aria-label="Delete task"><Trash2 size={15} /></button>
+          {capture.deletedAt ? <>
+            <button className="icon-action archive-action active" onClick={(event) => { event.stopPropagation(); restoreCapture(capture); }} title="Restore task" aria-label="Restore task"><RotateCcw size={15} /></button>
+            <button className="icon-action danger-action" onClick={(event) => { event.stopPropagation(); deleteCaptureForever(capture); }} title="Delete task forever" aria-label="Delete task forever"><Trash2 size={15} /></button>
+          </> : <>
+            <button className={`icon-action archive-action ${capture.archived ? "active" : ""}`} onClick={(event) => { event.stopPropagation(); updateCapture(capture.id, { archived: !capture.archived }); }} title={capture.archived ? "Restore from archive" : "Archive task"} aria-label={capture.archived ? "Restore from archive" : "Archive task"}><Archive size={15} /></button>
+            <button className="icon-action danger-action" onClick={(event) => { event.stopPropagation(); trashCapture(capture); }} title="Move task to trash" aria-label="Move task to trash"><Trash2 size={15} /></button>
+          </>}
         </div>
       </div>
     </motion.article>
@@ -3805,18 +3829,12 @@ function SettingsView() {
     }
   };
   const deleteImportBatch = async (batch: ImportBatch) => {
-    if (!window.confirm(`Delete ${batch.count} capture${batch.count === 1 ? "" : "s"} from ${batch.title}?`)) return;
-    setAuthStatus(`Deleting ${batch.title}...`);
-    const response = await fetch(`/api/imports/${encodeURIComponent(batch.id)}`, { method: "DELETE" });
-    if (!response.ok) {
-      setAuthStatus("Could not delete that import.");
-      return;
-    }
-    const result = await response.json() as { deleted: number };
+    if (!window.confirm(`Move ${batch.count} capture${batch.count === 1 ? "" : "s"} from ${batch.title} to Trash?`)) return;
     const ids = new Set(batch.captureIds.map(Number));
-    setCaptures((current) => current.filter((capture) => !ids.has(Number(capture.id))));
+    const deletedAt = new Date().toISOString();
+    setCaptures((current) => current.map((capture) => ids.has(Number(capture.id)) ? { ...capture, deletedAt, archived: false } : capture));
     setImportBatches((current) => current.filter((item) => item.id !== batch.id));
-    setAuthStatus(`${result.deleted} imported capture${result.deleted === 1 ? "" : "s"} deleted.`);
+    setAuthStatus(`${batch.count} imported capture${batch.count === 1 ? "" : "s"} moved to Trash.`);
     refreshActivity();
   };
   const copyText = async (value: string, label: string) => {
