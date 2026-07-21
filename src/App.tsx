@@ -20,6 +20,7 @@ import {
   Image,
   Inbox,
   Lightbulb,
+  ListTodo,
   Link2,
   Lock,
   Mail,
@@ -794,7 +795,7 @@ const usefulSuggestedAction = (action?: string | null) => {
   return value;
 };
 const iconForType = (type: CaptureType) => ({
-  Actionable: CheckCircle2,
+  Actionable: ListTodo,
   Idea: Lightbulb,
   Expense: ReceiptText,
   Place: MapPin,
@@ -2985,13 +2986,13 @@ function TaskCard({ capture, onOpen }: { capture: Capture; onOpen: () => void })
           <button className="icon-action archive-action active" onClick={(event) => { event.stopPropagation(); restoreCapture(capture); }} title="Restore task" aria-label="Restore task"><RotateCcw size={15} /></button>
           <button className="icon-action danger-action" onClick={(event) => { event.stopPropagation(); deleteCaptureForever(capture); }} title="Delete task forever" aria-label="Delete task forever"><Trash2 size={15} /></button>
         </> : <>
-          {missing.length > 0 && <button className="task-missing-chip" onClick={(event) => { event.stopPropagation(); onOpen(); }} title="Optional details can make this task easier to manage" aria-label={`Missing ${missing.join(", ")}`}><AlertTriangle size={13} />Missing {missing.join(" · ")}</button>}
           <button className={`icon-action star-action ${pinned ? "active" : ""}`} onClick={(event) => { event.stopPropagation(); updateCapture(capture.id, { starred: !pinned }); }} title={pinned ? "Remove star" : "Star task"} aria-label={pinned ? "Remove star" : "Star task"}><Star size={15} fill={pinned ? "currentColor" : "none"} /></button>
           <button className="icon-action lock-action" onClick={(event) => { event.stopPropagation(); void lockCapture(capture); }} title="Lock task" aria-label="Lock task"><Lock size={15} /></button>
           <button className={`icon-action archive-action ${capture.archived ? "active" : ""}`} onClick={(event) => { event.stopPropagation(); updateCapture(capture.id, { archived: !capture.archived }); }} title={capture.archived ? "Restore from archive" : "Archive task"} aria-label={capture.archived ? "Restore from archive" : "Archive task"}><Archive size={15} /></button>
           <button className="icon-action done-action" onClick={(event) => { event.stopPropagation(); updateCapture(capture.id, { completed: !capture.completed }); }} title={capture.completed ? "Reopen task" : "Mark done"} aria-label={capture.completed ? "Reopen task" : "Mark done"}><CheckCircle2 size={15} /></button>
           <button className="icon-action calendar-action" onClick={(event) => { event.stopPropagation(); moveToTomorrow(); }} title="Move to tomorrow" aria-label="Move to tomorrow"><CalendarCheck size={15} /></button>
           <button className="icon-action export-action" onClick={(event) => { event.stopPropagation(); exportCaptureIcs(capture); }} title="Export .ics" aria-label="Export .ics"><ExternalLink size={15} /></button>
+          {missing.length > 0 && <button className="task-missing-chip" onClick={(event) => { event.stopPropagation(); onOpen(); }} title="Optional details can make this task easier to manage" aria-label={`Missing ${missing.join(", ")}`}><AlertTriangle size={13} />Missing {missing.join(" · ")}</button>}
           <button className="icon-action danger-action" onClick={(event) => { event.stopPropagation(); trashCapture(capture); }} title="Move task to trash" aria-label="Move task to trash"><Trash2 size={15} /></button>
         </>}
       </div>
