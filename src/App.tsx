@@ -1061,13 +1061,24 @@ const captureBodyText = (capture: Capture) => {
   return body.startsWith(title) ? body.slice(title.length).trim() : body;
 };
 
-const checklistItemsFromText = (text: string): ChecklistItem[] => text
-  .split(/\r?\n/)
-  .map((line, index) => {
-    const match = line.match(/^\s*[-*]\s+\[( |x|X)\]\s+(.+?)\s*$/);
-    return match ? { id: `check-${index}-${match[2].slice(0, 12)}`, text: match[2].trim(), done: match[1].toLowerCase() === "x" } : null;
-  })
-  .filter(Boolean) as ChecklistItem[];
+const checklistItemsFromText = (text: string): ChecklistItem[] => {
+  const compactText = text.replace(/^Checklist:\s*/i, "").trim();
+  const inlineMatches = Array.from(compactText.matchAll(/[-*]\s+\[( |x|X)\]\s+(.+?)(?=\s+[-*]\s+\[(?: |x|X)\]\s+|$)/g));
+  if (inlineMatches.length > 1) {
+    return inlineMatches.map((match, index) => ({
+      id: `check-${index}-${match[2].slice(0, 12)}`,
+      text: match[2].trim(),
+      done: match[1].toLowerCase() === "x",
+    }));
+  }
+  return text
+    .split(/\r?\n/)
+    .map((line, index) => {
+      const match = line.match(/^\s*[-*]\s+\[( |x|X)\]\s+(.+?)\s*$/);
+      return match ? { id: `check-${index}-${match[2].slice(0, 12)}`, text: match[2].trim(), done: match[1].toLowerCase() === "x" } : null;
+    })
+    .filter(Boolean) as ChecklistItem[];
+};
 
 const checklistTextFor = (items: ChecklistItem[]) => `Checklist:\n${items.map((item) => `- [${item.done ? "x" : " "}] ${item.text}`).join("\n")}`;
 
@@ -2863,6 +2874,10 @@ function TaskCard({ capture, onOpen }: { capture: Capture; onOpen: () => void })
   const { updateCapture, trashCapture, restoreCapture, deleteCaptureForever, tagColors, isCaptureUnlocked, unlockCapture } = useBrain();
   const tags = visibleCaptureTags(capture.metadata).slice(0, 2);
   const taskAudio = audioAttachmentsFor(capture);
+  const taskChecklist = checklistForCapture(capture);
+  const taskBody = captureBodyText(capture);
+  const sourceLabel = capture.source ? capture.source.replace(/\b\w/g, (letter) => letter.toUpperCase()) : "";
+  const showSourceLabel = Boolean(sourceLabel && !tags.some((tag) => tag.toLowerCase() === sourceLabel.toLowerCase()));
   const pinned = isPinnedCapture(capture);
   const locked = !isCaptureUnlocked(capture);
   const due = capture.due ? parseDueDate(capture.due) : null;
@@ -2901,12 +2916,23 @@ function TaskCard({ capture, onOpen }: { capture: Capture; onOpen: () => void })
           <h3>{capture.title}</h3>
           {capture.priority && <span className="priority-pill" style={{ "--priority-color": priorityColor(capture.priority) } as React.CSSProperties}>{priorityLabel(capture.priority)}</span>}
         </div>
-        {captureBodyText(capture) && <p>{captureBodyText(capture)}</p>}
-        {taskAudio.map((attachment) => <VoiceNotePlayer attachment={attachment} compact minimal key={attachment.id} />)}
+        {taskBody && !taskChecklist.length && <p>{taskBody}</p>}
+        {taskChecklist.length > 0 && <ChecklistBlock capture={capture} compact onChange={(items) => updateCapture(capture.id, { checklistItems: items, text: checklistTextFor(items) })} />}
+        {taskAudio.length > 0 && <div className="task-audio-list">
+          {taskAudio.map((attachment) => (
+            <VoiceNotePlayer
+              attachment={attachment}
+              compact
+              minimal
+              key={attachment.id}
+              onRename={(title) => updateCapture(capture.id, { attachments: capture.attachments?.map((item) => item.id === attachment.id ? { ...item, title } : item) })}
+            />
+          ))}
+        </div>}
         {missing.length > 0 && <button className="task-missing-chip" onClick={(event) => { event.stopPropagation(); onOpen(); }} title="Optional details can make this task easier to manage"><AlertTriangle size={13} />Missing {missing.join(" · ")}</button>}
         <div className="task-meta">
           {tags.map((tag) => <span key={tag} style={tagChipStyle(tag, tagColors)}>{tag}</span>)}
-          {capture.source && <small>{capture.source.replace(/\b\w/g, (letter) => letter.toUpperCase())}</small>}
+          {showSourceLabel && <small>{sourceLabel}</small>}
         </div>
       </div>
       <div className="task-schedule">

@@ -312,6 +312,24 @@ button:disabled { cursor: progress; opacity: .7; }
 .task-title-row h3 { min-width: 0; flex: 1 1 auto; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 17px; letter-spacing: 0; }
 .task-title-row .priority-pill { flex: 0 0 auto; min-height: 25px; padding: 6px 9px; border-radius: 999px; color: var(--priority-color); background: color-mix(in srgb, var(--priority-color) 14%, white); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--priority-color) 20%, transparent); font-size: 11px; font-weight: 900; }
 .task-main p { display: -webkit-box; margin: 0; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 1; color: var(--muted); line-height: 1.4; font-size: 13px; font-weight: 720; }
+.task-card .checklist-block { max-width: min(560px, 100%); gap: 6px; margin: 2px 0 0; }
+.task-card .checklist-block button { grid-template-columns: 20px minmax(0, 1fr); gap: 8px; padding: 7px 9px; border-radius: 12px; background: rgba(255,255,255,.58); }
+.task-card .checklist-block button span { width: 20px; height: 20px; }
+.task-card .checklist-block button b { font-size: 12px; }
+.task-card .checklist-block small { padding: 4px 7px; font-size: 10px; }
+.task-audio-list { max-width: min(540px, 100%); display: grid; gap: 8px; margin-top: 2px; }
+.task-audio-list .voice-player.compact { grid-template-columns: 36px minmax(0, 1fr); grid-template-areas: "play title" "play body"; align-items: center; column-gap: 10px; row-gap: 5px; margin: 0; padding: 9px 10px; border-radius: 16px; background: rgba(245,247,255,.66); border: 1px solid rgba(199,210,254,.72); box-shadow: inset 0 1px 0 rgba(255,255,255,.7); }
+.task-audio-list .voice-player.compact .voice-play { width: 36px; height: 36px; }
+.task-audio-list .voice-player.compact > .voice-title-row { min-height: 24px; }
+.task-audio-list .voice-player.compact > .voice-title-row b { font-size: 13px; }
+.task-audio-list .voice-player.compact .voice-title-edit { width: 22px; height: 22px; min-height: 22px; }
+.task-audio-list .voice-player.compact .voice-progress-rail { height: 7px; min-height: 7px; }
+.task-audio-list .voice-player.compact .voice-body { gap: 6px; }
+.task-audio-list .voice-controls { grid-template-columns: auto auto 1fr; gap: 6px; }
+.task-audio-list .voice-controls time { font-size: 11px; }
+.task-audio-list .voice-controls button { min-height: 24px; padding: 4px 7px; font-size: 10px; }
+.task-audio-list .voice-controls > div:first-of-type { grid-column: 2; }
+.task-audio-list .voice-controls > div:last-child { grid-column: 3; }
 .task-missing-chip { width: fit-content; min-height: 26px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 9px; border-radius: 999px; color: #b45309; background: rgba(255,247,237,.84); box-shadow: inset 0 0 0 1px rgba(251,146,60,.28); font-size: 11px; font-weight: 900; }
 .task-missing-chip svg { flex: 0 0 auto; }
 .task-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; min-width: 0; }
