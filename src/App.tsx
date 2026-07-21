@@ -3149,6 +3149,23 @@ function DetailModal({ capture }: { capture: Capture }) {
     const cleanTags = visibleCaptureTags(Array.from(new Set(tags.map((tag) => tag.trim()).filter(Boolean))));
     return { ...capture, ...draft, due: normalizedDue, repeatDays, metadata: cleanTags, attachments } as Capture;
   };
+  const detailPatchFromDraft = React.useCallback(() => {
+    const normalizedDue = normalizeDue(draft.due);
+    const cleanTags = visibleCaptureTags(Array.from(new Set(tags.map((tag) => tag.trim()).filter(Boolean))));
+    return { ...draft, due: normalizedDue, repeatDays, metadata: cleanTags, attachments } as Partial<Capture>;
+  }, [attachments, draft, repeatDays, tags]);
+  const persistDetailDraft = React.useCallback(() => {
+    if (draft.private) return;
+    updateCapture(capture.id, { ...detailPatchFromDraft(), private: false, privateEncryptedData: undefined, privateEncryptedAt: undefined });
+  }, [capture.id, detailPatchFromDraft, draft.private, updateCapture]);
+  React.useEffect(() => {
+    const timeout = window.setTimeout(() => persistDetailDraft(), 450);
+    return () => window.clearTimeout(timeout);
+  }, [persistDetailDraft]);
+  const closeDetail = () => {
+    persistDetailDraft();
+    setSelectedCapture(null);
+  };
   const lockDetailNow = async () => {
     if (!privatePinHash) {
       localStorage.setItem("nube-settings-tab", "Data & Privacy");
@@ -3163,9 +3180,9 @@ function DetailModal({ capture }: { capture: Capture }) {
   };
   const saveDetail = async () => {
     setSavingDetail(true);
-    const normalizedDue = normalizeDue(draft.due);
-    const cleanTags = visibleCaptureTags(Array.from(new Set(tags.map((tag) => tag.trim()).filter(Boolean))));
-    const patch: Partial<Capture> = { ...draft, due: normalizedDue, repeatDays, metadata: cleanTags, attachments };
+    const patch = detailPatchFromDraft();
+    const normalizedDue = patch.due;
+    const cleanTags = patch.metadata ?? [];
     const nextCapture = { ...capture, ...patch } as Capture;
     if (!draft.private) updateCapture(capture.id, { ...patch, private: false, privateEncryptedData: undefined, privateEncryptedAt: undefined });
     if (draft.type === "Actionable" && normalizedDue && repeatDays.length) {
@@ -3193,9 +3210,9 @@ function DetailModal({ capture }: { capture: Capture }) {
     setSavingDetail(false);
   };
   return (
-    <div className="modal-backdrop" onClick={() => setSelectedCapture(null)}>
+    <div className="modal-backdrop" onClick={closeDetail}>
       <motion.section className="detail-modal" onClick={(e) => e.stopPropagation()} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 18 }}>
-        <header className="detail-header"><div><p className="eyebrow">{capture.type} capture</p><input className="detail-title-input" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} /></div><div className="detail-header-actions"><button className={draft.starred ? "active" : ""} onClick={() => { const nextStarred = !draft.starred; setDraft({ ...draft, starred: nextStarred }); updateCapture(capture.id, { starred: nextStarred }); }}><Star size={18} fill={draft.starred ? "currentColor" : "none"} /></button><button className={draft.private ? "active private-active" : ""} disabled={savingDetail} onClick={() => { if (draft.private) setDraft({ ...draft, private: false }); else void lockDetailNow(); }} title={draft.private ? "Make visible" : "Lock capture"}><Lock size={18} /></button><button onClick={() => setSelectedCapture(null)}><X size={20} /></button></div></header>
+        <header className="detail-header"><div><p className="eyebrow">{capture.type} capture</p><input className="detail-title-input" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} /></div><div className="detail-header-actions"><button className={draft.starred ? "active" : ""} onClick={() => { const nextStarred = !draft.starred; setDraft({ ...draft, starred: nextStarred }); updateCapture(capture.id, { starred: nextStarred }); }}><Star size={18} fill={draft.starred ? "currentColor" : "none"} /></button><button className={draft.private ? "active private-active" : ""} disabled={savingDetail} onClick={() => { if (draft.private) setDraft({ ...draft, private: false }); else void lockDetailNow(); }} title={draft.private ? "Make visible" : "Lock capture"}><Lock size={18} /></button><button onClick={closeDetail}><X size={20} /></button></div></header>
         <div className="detail-edit-grid">
           <OptionPicker label="Type" value={draft.type} options={collectionOrder} onChange={(type) => setDraft({ ...draft, type })} />
           <div className="date-priority-row">
@@ -3269,7 +3286,7 @@ function DetailModal({ capture }: { capture: Capture }) {
           </div>
           {draft.imageUrl && <div className="attachment-media detail-preview"><img src={draft.imageUrl} alt={draft.attachmentName ?? draft.title} onClick={() => setPreviewImage({ src: draft.imageUrl ?? "", alt: draft.attachmentName ?? draft.title })} /><button onClick={() => setPreviewImage({ src: draft.imageUrl ?? "", alt: draft.attachmentName ?? draft.title })}><Maximize2 size={16} />Expand</button></div>}
         </div>
-        <footer className="detail-actions"><button disabled={savingDetail} onClick={() => void saveDetail()}><CheckCircle2 size={16} />{savingDetail ? "Saving..." : "Save edits"}</button><button onClick={() => setSelectedCapture(null)}><X size={16} />Cancel</button></footer>
+        <footer className="detail-actions"><button disabled={savingDetail} onClick={() => void saveDetail()}><CheckCircle2 size={16} />{savingDetail ? "Saving..." : "Save edits"}</button><button onClick={closeDetail}><X size={16} />Close</button></footer>
       </motion.section>
     </div>
   );
